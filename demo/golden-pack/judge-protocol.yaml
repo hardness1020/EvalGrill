@@ -1,11 +1,8 @@
-# Judge protocol — Demo Corpus golden pack.
-# No JSON Schema yet: the protocol/runner contract is pinned by the Judge
-# Runner interface ticket (map ticket 09); this file is its concrete input.
+# Judge protocol — Demo Corpus golden pack. Pure protocol, portable to
+# platforms: runner selection lives in evalgrill.yaml (execution detail).
+# Contract pinned by the Judge Runner interface ticket: one criterion per
+# judge call; verdict envelope records meta.source live|replay.
 schema_version: 1
-
-runner:
-  default: claude-cli # `claude -p` per ADR-0001 (subscription-first)
-  replay: fixtures/scripted-verdicts.jsonl # scripted judge per ADR-0002; verdict envelope must record source: live|replay
 
 anonymization:
   hide_candidate_id: true # judge never sees candidate ids or provenance labels

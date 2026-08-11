@@ -27,3 +27,11 @@ validation:
   minimum_failure_coverage: 1
   require_human_verified_tasks: true
   require_veto_calibration: true
+
+# Execution detail, not protocol: which Judge Runner runs calibration locally.
+# CLI --runner overrides. Contract pinned by map ticket "Judge Runner interface".
+runner:
+  default: claude-cli # `claude -p` per ADR-0001 (subscription-first)
+  model: claude-haiku-4-5-20251001 # full snapshot id; envelope records what actually ran
+  timeout_s: 120 # caller-enforced; no CLI flag exists
+  replay_fixture: fixtures/scripted-verdicts.jsonl # Scripted Judge per ADR-0002

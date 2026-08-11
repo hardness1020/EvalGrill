@@ -39,6 +39,18 @@
         "require_human_verified_tasks": { "type": "boolean" },
         "require_veto_calibration": { "type": "boolean" }
       }
+    },
+    "runner": {
+      "description": "Judge Runner selection — execution detail, overridable at invocation; never exported with the protocol.",
+      "type": "object",
+      "required": ["default"],
+      "additionalProperties": false,
+      "properties": {
+        "default": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "model": { "type": "string" },
+        "timeout_s": { "type": "integer", "minimum": 1 },
+        "replay_fixture": { "type": "string" }
+      }
     }
   }
 }

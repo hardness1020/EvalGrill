@@ -110,8 +110,13 @@ def main():
         for row in coverage["rows"]:
             expect(row["failure_mode"] in fm_ids, f"coverage row -> unknown failure mode {row['failure_mode']}")
 
-    # Demo fixtures, when present. Verdict format is provisional until the
-    # Judge Runner interface ticket pins the runner contract (ADR-0002).
+    runner = manifest.get("runner", {})
+    if "replay_fixture" in runner:
+        expect((pack / runner["replay_fixture"]).exists(), f"runner.replay_fixture missing: {runner['replay_fixture']}")
+
+    # Demo fixtures, when present. Case-level lines are the Scripted Judge's
+    # storage format; the replay runner projects them per-criterion, and the
+    # orchestrator recomputes final_result against the stored value (ADR-0002).
     draft = pack / "fixtures" / "draft-rubric.yaml"
     if draft.exists():
         check(yaml.safe_load(draft.read_text()), "rubric.schema.json", "fixtures/draft-rubric.yaml")
