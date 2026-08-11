@@ -1,0 +1,55 @@
+# Demo Corpus — NR-7 sleep-quality pilot
+
+The hand-authored v0.1 corpus (map ticket 13, design in ticket 08, ADR-0002).
+Everything is fictional and self-contained: neither agent nor judge needs any
+knowledge outside `golden-pack/sources/`.
+
+- `inputs/` — what a user hands EvalGrill (PRD §30 Input): agent description,
+  10 task briefs (3 easy / 4 medium / 3 hard), 5 domain rules. The "5 known
+  failed outputs" are committed calibration candidates, referenced from the
+  agent description — one canonical artifact per candidate, no duplicate store.
+- `golden-pack/` — the committed golden EvalPack the §30 acceptance bar
+  asserts against. Source documents live inside the pack (`sources/`) because
+  `task.input.context` paths are pack-root-relative and the pack must stay
+  self-contained for export.
+- `golden-pack/fixtures/` — deliberately defective artifacts and the scripted
+  judge: acceptance detections replay these; live LLM runs are dogfood
+  evidence only (ADR-0002).
+
+Validate: `uv run scripts/check_pack.py demo/golden-pack`
+
+## Spoiler map — where each §30 detection is planted
+
+Do not "fix" these; they are the test.
+
+| §30 detection | Plant | Where |
+|---|---|---|
+| High-severity failure with no Task coverage | `misattributed_quote`: high severity, grounded by a committed failed output, targeted by zero tasks | `failure-taxonomy.yaml`; absence in every `failure_targets`; exhibited by `nr7-marketing-review/quote-swap` |
+| Vague rubric criterion | `report_quality` — "poor / acceptable / excellent", no observable anchors | `fixtures/draft-rubric.yaml` |
+| Criterion that can be deterministic | `quantitative_claims_sourced` marked `deterministic: false` though mechanically checkable (golden rubric: `true`) | `fixtures/draft-rubric.yaml` vs `rubric.yaml` |
+| Missing veto | `no_fabricated_citations` expressed as a weighted ordinal criterion; zero-tolerance rule 1 demands a veto (golden rubric: `cites_only_provided_sources`) | `fixtures/draft-rubric.yaml` vs `rubric.yaml` |
+| Judge disagreement | scripted runs 1 and 2 flip on `nr7-overall-verdict/fluent-conflict-gloss` (pass → fail) | `fixtures/scripted-verdicts.jsonl` |
+| Pairwise order sensitivity | near-tie pair `near-tie-a`/`near-tie-b`: scripted judge prefers whichever is presented first in both orders | `fixtures/scripted-verdicts.jsonl` pairwise records |
+| Calibration failure | scripted judge passes `nr7-effect-size/citation-stuffing` in both runs; human label is fail (also run 1 on `fluent-conflict-gloss`) | `fixtures/scripted-verdicts.jsonl` vs `calibration.jsonl` |
+
+## Other engineered structure
+
+- **Candidate slate (16):** 4 clearly-good, 5 clearly-bad (= the §30 "5 known
+  failed outputs", one distinct failure mode each), 4 borderline, 3
+  reward-hacking (`ADVERSARIAL`: citation-stuffing, both-sides-boilerplate,
+  rubric-parroting). Concentrated on 6 focal tasks as contrast sets.
+- **Fact base:** the corpus's controlled disagreements — Karlsen (+4.1 CSQI at
+  600 mg, p=0.003) vs Tanaka (null at 300 mg) reconciled by Okafor's
+  dose-response; Moreau's +31% corrected to a non-significant +12%; a press
+  release and blog that launder the inflated numbers; a blog-only "Stanford
+  study" that exists nowhere (fabricated-citation bait); the CEO quote that
+  `quote-swap` misattributes to Dr. Karlsen.
+- **Domain rules → rubric traceability:** rule 1 → veto; rule 2 →
+  deterministic-able criterion; rule 3 → conflict_handling; rule 4 →
+  confidence_calibration (operationalized); rule 5 ("clear and
+  well-organized") is the vague-criterion bait — kept in the draft rubric,
+  deliberately dropped from the golden rubric after review.
+- **Provenance honesty:** hand-authored tasks/candidates are `SYNTHETIC`;
+  reward-hacking candidates are `ADVERSARIAL`; nothing claims `REAL`.
+- `coverage-matrix.yaml` is intentionally absent: it is a generated artifact;
+  the coverage script must produce it (and flag the planted gap) when it lands.

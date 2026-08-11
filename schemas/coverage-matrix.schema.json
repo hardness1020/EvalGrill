@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "coverage-matrix.schema.json",
+  "title": "Coverage matrix (coverage-matrix.yaml) — generated, never hand-edited",
+  "type": "object",
+  "required": ["schema_version", "rows"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["failure_mode", "severity", "tasks", "criteria", "calibration", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "failure_mode": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "severity": { "enum": ["critical", "high", "medium", "low"] },
+          "tasks": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
+          "criteria": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" } },
+          "calibration": {
+            "description": "task-id/candidate-id composite references.",
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$" }
+          },
+          "status": { "enum": ["covered", "gap"] },
+          "gaps": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "enum": ["no_task", "no_criterion", "criterion_without_task", "no_calibration_case"] }
+          }
+        },
+        "if": { "properties": { "status": { "const": "gap" } } },
+        "then": { "required": ["gaps"] }
+      }
+    }
+  }
+}

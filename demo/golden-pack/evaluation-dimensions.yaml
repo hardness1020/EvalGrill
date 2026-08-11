@@ -1,0 +1,32 @@
+schema_version: 1
+
+dimensions:
+  - id: evidence_grounding
+    description: >
+      Whether every claim traces to a source that actually exists in the
+      packet and actually says what the report says it does.
+    failure_modes: [fabricated_citation, unsupported_claim]
+
+  - id: attribution_integrity
+    description: >
+      Whether quotes and claims are attributed to the correct speaker and
+      source, preserving their evidential weight.
+    failure_modes: [misattributed_quote]
+
+  - id: conflict_awareness
+    description: >
+      Whether material disagreements among provided sources are surfaced and
+      reasoned about rather than silently merged.
+    failure_modes: [missed_source_conflict]
+
+  - id: coverage_completeness
+    description: >
+      Whether all provided sources that materially bear on the question are
+      accounted for, especially corrections and null results.
+    failure_modes: [incomplete_coverage]
+
+  - id: confidence_calibration
+    description: >
+      Whether expressed confidence tracks the strength and consistency of the
+      evidence, in both directions.
+    failure_modes: [false_certainty, miscalibrated_confidence]

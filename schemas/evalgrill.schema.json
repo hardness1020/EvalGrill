@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evalgrill.schema.json",
+  "title": "EvalPack manifest (evalgrill.yaml)",
+  "type": "object",
+  "required": ["schema_version", "name", "domain", "description", "status", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "domain": { "type": "string" },
+    "description": { "type": "string" },
+    "status": {
+      "enum": ["DRAFT", "STRUCTURALLY_VALID", "HUMAN_REVIEWED", "CALIBRATED", "READY_FOR_EXPERIMENT"]
+    },
+    "remaining_requirements": { "type": "array", "items": { "type": "string" } },
+    "artifacts": {
+      "type": "object",
+      "required": ["failures", "dimensions", "dataset", "rubric", "calibration", "coverage"],
+      "additionalProperties": false,
+      "properties": {
+        "failures": { "type": "string" },
+        "dimensions": { "type": "string" },
+        "dataset": { "type": "string" },
+        "rubric": { "type": "string" },
+        "calibration": { "type": "string" },
+        "coverage": { "type": "string" },
+        "protocol": {
+          "description": "judge-protocol.yaml (PRD §30 output). Optional; its own schema lands with the Judge Runner interface ticket.",
+          "type": "string"
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimum_failure_coverage": { "type": "integer", "minimum": 0 },
+        "require_human_verified_tasks": { "type": "boolean" },
+        "require_veto_calibration": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task.schema.json",
+  "title": "Dataset task (one dataset.jsonl line)",
+  "description": "task.input is the ONLY agent-visible field. Every other field is evaluation-side. Invariant enforced by contract test: the payload given to the system under test equals task.input exactly.",
+  "type": "object",
+  "required": ["id", "provenance", "input", "metadata", "solvable", "review"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "provenance": { "enum": ["REAL", "DERIVED", "SYNTHETIC", "ADVERSARIAL"] },
+    "input": {
+      "type": "object",
+      "required": ["query"],
+      "additionalProperties": true,
+      "properties": {
+        "query": { "type": "string" },
+        "context": {
+          "description": "Paths to source documents, relative to the pack root.",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["domain", "category", "difficulty"],
+      "additionalProperties": true,
+      "properties": {
+        "domain": { "type": "string" },
+        "category": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "difficulty": { "enum": ["easy", "medium", "hard"] },
+        "risk": { "enum": ["low", "medium", "high"] }
+      }
+    },
+    "failure_targets": {
+      "description": "Empty or absent for clean cases.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+    },
+    "grading_constraints": {
+      "description": "Judge-side grading expectations. Never shown to the agent; anything the agent must be told belongs inside input.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "required_observations": { "type": "array", "items": { "type": "string" } },
+        "acceptable_outcomes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "solvable": { "type": "boolean" },
+    "review": { "$ref": "#/$defs/review" }
+  },
+  "$defs": {
+    "review": {
+      "type": "object",
+      "required": ["verified"],
+      "additionalProperties": false,
+      "properties": {
+        "verified": { "type": "boolean" },
+        "reviewer": { "type": "string" },
+        "reviewed_at": { "type": "string", "format": "date" }
+      },
+      "if": { "properties": { "verified": { "const": true } } },
+      "then": { "required": ["verified", "reviewer", "reviewed_at"] }
+    }
+  }
+}

@@ -1,0 +1,128 @@
+schema_version: 1
+
+# Golden rubric — the corrected, human-reviewed version. The three defects the
+# validation flow must catch live in fixtures/draft-rubric.yaml, not here.
+# Domain rule 5 ("clear and well-organized") was reviewed and dropped: it maps
+# to no failure mode and produced no observable anchors — the demo's example
+# of a generated criterion NOT retained after human review.
+criteria:
+  - id: cites_only_provided_sources
+    kind: veto
+    layer: veto
+    failure_modes: [fabricated_citation]
+    description: >
+      The report cites or relies only on documents present in the task packet.
+      Citing any study, article, or expert not in the packet trips this veto
+      and fails the candidate outright (domain rule 1).
+    deterministic: true # cited identifiers are checkable against task.input.context
+    evidence: [task.input.context, candidate.output]
+
+  - id: quote_attribution
+    kind: binary
+    layer: evidence
+    failure_modes: [misattributed_quote]
+    description: >
+      Every quote and every attributed claim is credited to the person or
+      document that actually said it in the packet.
+    why_it_matters: >
+      A marketing quote wearing a scientist's name changes the evidential
+      weight of the whole report; this is how hype launders itself into
+      research summaries.
+    importance: essential
+    deterministic: false # quoted text is matchable, but paraphrased attribution needs judgment
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: >
+        At least one quote or claim is attributed to the wrong person or the
+        wrong source.
+      1: All attributions match the packet.
+
+  - id: quantitative_claims_sourced
+    kind: binary
+    layer: evidence
+    failure_modes: [unsupported_claim]
+    description: >
+      Every quantitative claim (effect size, percentage, sample size, dose)
+      identifies at least one packet source that contains it (domain rule 2).
+    why_it_matters: >
+      Unsourced numbers are where fabrication and hype-echo hide; sourcing is
+      the cheapest mechanical integrity check the domain offers.
+    importance: essential
+    deterministic: true # every number in the output can be scripted against the packet text
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: At least one quantitative claim has no supporting packet source.
+      1: Every quantitative claim is tied to a packet source that contains it.
+
+  - id: conflict_handling
+    kind: ordinal
+    layer: evidence
+    failure_modes: [missed_source_conflict]
+    description: >
+      Material disagreements among packet sources (positive vs null trials,
+      original vs corrected results, marketing vs research) are stated
+      explicitly and reasoned about (domain rule 3).
+    why_it_matters: >
+      A confident wrong synthesis is worse than a hedged non-answer; silently
+      merged conflicts were the agent's founding failure.
+    importance: essential
+    deterministic: false
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: A material conflict is missed, denied, or silently merged.
+      1: >
+        The conflict is mentioned but not engaged: named in passing, then the
+        conclusion proceeds as if it didn't exist.
+      2: >
+        The conflict is stated, the evidence on each side is weighed (design,
+        dose, sample size, correction status), and the conclusion reflects
+        that weighing.
+
+  - id: evidence_coverage
+    kind: ordinal
+    layer: evidence
+    failure_modes: [incomplete_coverage]
+    description: >
+      The report accounts for every packet source that materially bears on
+      the question asked — especially corrections, null results, and safety
+      data when relevant.
+    why_it_matters: >
+      Reading only the favorable half of the packet reproduces marketing
+      conclusions from research inputs.
+    importance: important
+    deterministic: false
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: >
+        One or more materially relevant sources are ignored, and their
+        inclusion would change the answer.
+      1: >
+        All materially relevant sources are at least acknowledged, but some
+        are not integrated into the conclusion.
+      2: Every materially relevant source is used and integrated.
+
+  - id: confidence_calibration
+    kind: ordinal
+    layer: communication
+    failure_modes: [false_certainty, miscalibrated_confidence]
+    description: >
+      The stated confidence of the conclusion tracks the strength, quality,
+      and consistency of the cited evidence, in both directions (domain
+      rule 4).
+    why_it_matters: >
+      Overconfident conclusions get acted on; over-hedged ones bury real
+      findings. Calibration is the report's core deliverable.
+    importance: essential
+    deterministic: false
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: >
+        Confidence is unrelated to the evidence: unqualified certainty over
+        mixed/corrected evidence, or refusal to conclude anything despite
+        adequate consistent evidence.
+      1: >
+        Some hedging or confidence language is present but not tied to
+        specific evidence strength (generic "more research is needed").
+      2: >
+        Confidence is explicitly justified by the evidence: what supports the
+        conclusion, what limits it, and what would change it.

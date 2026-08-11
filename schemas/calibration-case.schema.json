@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "calibration-case.schema.json",
+  "title": "Calibration case (one calibration.jsonl line)",
+  "description": "Identity is the (task_id, candidate_id) pair, rendered task-id/candidate-id. expected.final_result is intentional redundancy: it calibrates the aggregation/gating logic, not just per-criterion judgments. Cross-artifact rules (score keys reference non-veto criteria; veto keys reference kind: veto criteria) are enforced by the validate script.",
+  "type": "object",
+  "required": ["task_id", "candidate", "expected", "reason", "review"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "candidate": {
+      "type": "object",
+      "required": ["id", "provenance", "output"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "provenance": { "enum": ["REAL", "DERIVED", "SYNTHETIC", "ADVERSARIAL"] },
+        "output": { "type": "string" }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "required": ["scores", "vetoes", "final_result"],
+      "additionalProperties": false,
+      "properties": {
+        "scores": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "vetoes": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+          "additionalProperties": { "type": "boolean" }
+        },
+        "final_result": { "enum": ["pass", "fail"] }
+      }
+    },
+    "reason": { "type": "string" },
+    "review": { "$ref": "#/$defs/review" }
+  },
+  "$defs": {
+    "review": {
+      "type": "object",
+      "required": ["verified"],
+      "additionalProperties": false,
+      "properties": {
+        "verified": { "type": "boolean" },
+        "reviewer": { "type": "string" },
+        "reviewed_at": { "type": "string", "format": "date" }
+      },
+      "if": { "properties": { "verified": { "const": true } } },
+      "then": { "required": ["verified", "reviewer", "reviewed_at"] }
+    }
+  }
+}

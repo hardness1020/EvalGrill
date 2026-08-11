@@ -1,0 +1,40 @@
+# Judge protocol — Demo Corpus golden pack.
+# No JSON Schema yet: the protocol/runner contract is pinned by the Judge
+# Runner interface ticket (map ticket 09); this file is its concrete input.
+schema_version: 1
+
+runner:
+  default: claude-cli # `claude -p` per ADR-0001 (subscription-first)
+  replay: fixtures/scripted-verdicts.jsonl # scripted judge per ADR-0002; verdict envelope must record source: live|replay
+
+anonymization:
+  hide_candidate_id: true # judge never sees candidate ids or provenance labels
+  hide_candidate_provenance: true
+
+evidence_per_call:
+  - task.input.query
+  - task.input.context documents (full text)
+  - the single rubric criterion under evaluation, including its scale anchors
+grading_notes: task.grading_constraints are provided to the judge, never to the agent
+
+rationale:
+  required: true
+  per_criterion: true # one judged criterion per call; no omnibus scoring
+
+repeats:
+  runs_per_case: 2 # disagreement between runs is a calibration signal, not noise to hide
+
+pairwise:
+  order_swap: true # every compared pair is judged in both presentation orders
+  positions_anonymized: true # "Response A"/"Response B" only
+
+aggregation:
+  # final_result logic calibrated by expected.final_result in calibration.jsonl
+  - any tripped veto -> fail
+  - any essential-importance criterion at level 0 -> fail
+  - otherwise -> pass
+
+escalation:
+  - tripped veto -> human review before the result is used
+  - runs disagree on final_result for a case -> human review
+  - pairwise preference flips with presentation order -> flag order sensitivity, human review

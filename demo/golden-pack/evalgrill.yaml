@@ -1,0 +1,29 @@
+# EvalPack manifest — Demo Corpus golden pack (hand-authored; ADR-0002).
+schema_version: 1
+
+name: nr7-research-demo
+domain: research
+description: >
+  Golden EvalPack for the Demo Corpus: evaluates Lantern, a source-grounded
+  research assistant, on the fictional question of whether the supplement NR-7
+  improves sleep quality. Hand-authored with planted failure conditions so all
+  seven PRD §30 detections fire deterministically.
+
+status: HUMAN_REVIEWED # calibration not yet executed; becomes CALIBRATED when the runner lands
+remaining_requirements:
+  - run judge calibration (scripted replay + live claude -p dogfood)
+  - generate coverage-matrix.yaml with the coverage script
+
+artifacts:
+  failures: failure-taxonomy.yaml
+  dimensions: evaluation-dimensions.yaml
+  dataset: dataset.jsonl
+  rubric: rubric.yaml
+  calibration: calibration.jsonl
+  coverage: coverage-matrix.yaml # generated — intentionally not committed here
+  protocol: judge-protocol.yaml
+
+validation:
+  minimum_failure_coverage: 1
+  require_human_verified_tasks: true
+  require_veto_calibration: true

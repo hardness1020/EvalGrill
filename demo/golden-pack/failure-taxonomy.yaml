@@ -1,0 +1,121 @@
+schema_version: 1
+
+# Demo Corpus failure taxonomy — 7 modes (map ticket 08, ADR-0002).
+# misattributed_quote is the planted coverage gap: high severity, grounded in a
+# known failed output, deliberately targeted by ZERO tasks so the coverage
+# audit must flag it (§30: "a high-severity failure with no Task coverage").
+failure_modes:
+  - id: fabricated_citation
+    description: >
+      The report cites or relies on a source that does not exist in the
+      provided packet (invented study, external article, imagined expert).
+    severity: high
+    frequency: rare
+    location: evidence
+    observable_signals:
+      - cited study/author/identifier matches no packet document
+      - claim attributed to "research" that cannot be located in the packet
+    evaluation_method:
+      primary: deterministic
+      secondary: rubric
+    provenance:
+      - "known failed output: nr7-blog-check/phantom-study (cited a 'Stanford study' and a 'Rivera 2023 replication' found nowhere in the packet)"
+      - "domain rule 1: never cite a source outside the provided packet"
+
+  - id: misattributed_quote
+    description: >
+      A real quote or claim from the packet is attributed to the wrong person
+      or the wrong source, changing its evidential weight.
+    severity: high
+    frequency: rare
+    location: evidence
+    observable_signals:
+      - quoted text exists in the packet but under a different speaker/author
+      - marketing or opinion language presented as coming from a study author
+    evaluation_method:
+      primary: rubric
+      secondary: human_review
+    provenance:
+      - "known failed output: nr7-marketing-review/quote-swap (CEO's hype quote attributed to the trial's lead author)"
+
+  - id: missed_source_conflict
+    description: >
+      Provided sources materially disagree, and the report presents a single
+      merged conclusion without acknowledging the disagreement.
+    severity: high
+    frequency: occasional
+    location: evidence
+    observable_signals:
+      - packet contains a positive result and a null/corrected result on the same question
+      - report expresses one conclusion with no mention of the disagreement
+    evaluation_method:
+      primary: rubric
+    provenance:
+      - "known failed output: nr7-overall-verdict/merged-conflict (declared the sources unanimous over a direct null-result contradiction)"
+      - "domain rule 3: conflicts between sources must be stated explicitly"
+
+  - id: false_certainty
+    description: >
+      The report expresses unqualified certainty where the evidence supports
+      only a hedged or conditional conclusion.
+    severity: medium
+    frequency: common
+    location: communication
+    observable_signals:
+      - words like "proven", "definitively", "beyond doubt" over mixed evidence
+      - acknowledged caveats dropped from the final conclusion
+    evaluation_method:
+      primary: rubric
+    provenance:
+      - "known failed output: nr7-overall-verdict/overconfident-verdict ('definitively proven')"
+      - "domain rule 4: conclusions must state confidence calibrated to evidence"
+
+  - id: unsupported_claim
+    description: >
+      A quantitative or factual claim appears with no provided source that
+      supports it (including real sources cited for numbers they don't contain).
+    severity: medium
+    frequency: common
+    location: evidence
+    observable_signals:
+      - number appears in the report but in no cited packet document
+      - citation present but the cited document does not contain the claim
+    evaluation_method:
+      primary: deterministic
+      secondary: rubric
+    provenance:
+      - "known failed output: nr7-overall-verdict/overconfident-verdict (invented an unsourced effect number)"
+      - "domain rule 2: every quantitative claim must identify a provided supporting source"
+
+  - id: incomplete_coverage
+    description: >
+      The report ignores provided sources that materially change the answer
+      (corrections, null results, safety data relevant to the question).
+    severity: medium
+    frequency: common
+    location: evidence
+    observable_signals:
+      - a packet document that contradicts or corrects the used ones goes unmentioned
+      - conclusion matches what you'd get from reading only the favorable sources
+    evaluation_method:
+      primary: rubric
+    provenance:
+      - "known failed output: nr7-effect-size/hype-echo (repeated a corrected +31% figure while ignoring the published correction notice)"
+
+  - id: miscalibrated_confidence
+    description: >
+      Stated confidence does not track evidence strength in either direction:
+      overweighting weak evidence, or refusing any conclusion the evidence
+      adequately supports.
+    severity: medium
+    frequency: occasional
+    location: communication
+    observable_signals:
+      - anecdotes or uncontrolled pilots weighted like controlled trials
+      - refusal-to-conclude verdicts over consistent controlled evidence
+      - numeric confidence language unconnected to any cited evidence
+    evaluation_method:
+      primary: rubric
+      secondary: human_review
+    provenance:
+      - "expert guideline (evidence-review team): over-hedging strong evidence is as much a failure as overclaiming weak evidence"

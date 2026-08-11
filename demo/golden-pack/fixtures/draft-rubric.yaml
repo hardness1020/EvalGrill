@@ -1,0 +1,111 @@
+schema_version: 1
+
+# FIXTURE — the "as generated, before validation" rubric (ADR-0002). Schema-valid
+# on purpose; its three defects are semantic, and rubric validation must catch:
+#   1. report_quality            -> vague criterion (no observable anchors)
+#   2. quantitative_claims_sourced -> mechanically checkable but marked for LLM judging
+#   3. no_fabricated_citations   -> zero-tolerance failure expressed as a weighted
+#                                   criterion instead of a veto (the missing veto)
+# The corrected version is ../rubric.yaml.
+criteria:
+  - id: no_fabricated_citations
+    kind: ordinal # DEFECT: severity-high zero-tolerance mode weighted on a scale, not a veto
+    layer: evidence
+    failure_modes: [fabricated_citation]
+    description: >
+      The report should avoid citing sources that are not in the provided
+      packet.
+    why_it_matters: >
+      Citing nonexistent research undermines trust in the report.
+    importance: essential
+    deterministic: true
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: The report cites multiple nonexistent sources.
+      1: The report cites one nonexistent source or is ambiguous about a source's origin.
+      2: All citations resolve to provided packet documents.
+
+  - id: quantitative_claims_sourced
+    kind: binary
+    layer: evidence
+    failure_modes: [unsupported_claim]
+    description: >
+      Every quantitative claim should identify at least one provided source
+      that supports it.
+    why_it_matters: >
+      Numbers without sources cannot be verified by readers.
+    importance: essential
+    deterministic: false # DEFECT: this is mechanically checkable against the packet text
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: Some quantitative claims lack a supporting source.
+      1: All quantitative claims cite a supporting source.
+
+  - id: report_quality
+    kind: ordinal # DEFECT: vague criterion — no observable anchors, no evaluable definition
+    layer: communication
+    failure_modes: [incomplete_coverage]
+    description: >
+      The report should be clear, well-organized, and of high overall quality.
+    why_it_matters: >
+      High-quality reports are more useful to readers.
+    importance: desirable
+    deterministic: false
+    evidence: [candidate.output]
+    scale:
+      0: Poor quality.
+      1: Acceptable quality.
+      2: Excellent quality.
+
+  - id: conflict_handling
+    kind: ordinal
+    layer: evidence
+    failure_modes: [missed_source_conflict]
+    description: >
+      Material disagreements among packet sources are stated explicitly and
+      reasoned about rather than silently merged.
+    why_it_matters: >
+      A confident wrong synthesis is worse than a hedged non-answer.
+    importance: essential
+    deterministic: false
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: A material conflict is missed, denied, or silently merged.
+      1: The conflict is mentioned but not engaged.
+      2: The conflict is stated and the evidence on each side is weighed.
+
+  - id: evidence_coverage
+    kind: ordinal
+    layer: evidence
+    failure_modes: [incomplete_coverage]
+    description: >
+      The report accounts for every packet source that materially bears on
+      the question, especially corrections and null results.
+    why_it_matters: >
+      Reading only the favorable half of the packet reproduces marketing
+      conclusions from research inputs.
+    importance: important
+    deterministic: false
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: Materially relevant sources are ignored and their inclusion would change the answer.
+      1: All materially relevant sources are acknowledged but some are not integrated.
+      2: Every materially relevant source is used and integrated.
+
+  - id: confidence_calibration
+    kind: ordinal
+    layer: communication
+    failure_modes: [false_certainty, miscalibrated_confidence]
+    description: >
+      The stated confidence of the conclusion tracks the strength and
+      consistency of the cited evidence, in both directions.
+    why_it_matters: >
+      Overconfident conclusions get acted on; over-hedged ones bury real
+      findings.
+    importance: essential
+    deterministic: false
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: Confidence is unrelated to the evidence.
+      1: Hedging present but not tied to specific evidence strength.
+      2: Confidence explicitly justified by the evidence.
