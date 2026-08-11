@@ -1,0 +1,12 @@
+{
+  "name": "evalgrill-dev",
+  "description": "Dev marketplace for the EvalGrill plugin (this repo)",
+  "owner": { "name": "hardness1020" },
+  "plugins": [
+    {
+      "name": "evalgrill",
+      "source": "./plugin",
+      "description": "Design trustworthy evaluations for AI tasks"
+    }
+  ]
+}

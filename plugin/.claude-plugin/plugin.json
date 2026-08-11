@@ -1,0 +1,6 @@
+{
+  "name": "evalgrill",
+  "version": "0.1.0",
+  "author": { "name": "hardness1020" },
+  "description": "Design trustworthy evaluations for AI tasks: analyze the problem, build a dataset, design a rubric, validate the eval design, and export to Braintrust, LangSmith, or Phoenix."
+}
