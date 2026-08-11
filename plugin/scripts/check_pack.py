@@ -4,19 +4,20 @@
 # ///
 """Validate an EvalPack directory against the canonical schemas + cross-artifact rules.
 
-Usage: uv run scripts/check_pack.py <pack-dir>
+Usage: uv run check_pack.py <pack-dir>
 
-ponytail: minimal checker grown from the ticket-07 prototype; the full validate
-skill (lifecycle enforcement, coverage generation) is a later ticket.
+Structural gate of the validate phase; coverage generation, calibration, and
+lifecycle assessment live in audit_pack.py.
 """
 import json
 import pathlib
+import re
 import sys
 
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
-SCHEMAS = pathlib.Path(__file__).resolve().parent.parent / "plugin" / "schemas"
+SCHEMAS = pathlib.Path(__file__).resolve().parent.parent / "schemas"
 
 
 def load_schema(name):
@@ -109,6 +110,16 @@ def main():
     if coverage:
         for row in coverage["rows"]:
             expect(row["failure_mode"] in fm_ids, f"coverage row -> unknown failure mode {row['failure_mode']}")
+
+    # Provenance grounding (analyze-skill handoff): a "known failed output"
+    # pointer must resolve to a committed calibration case — grounding claims
+    # that cite artifacts the pack doesn't hold are the honor-system gap.
+    for f in taxonomy["failure_modes"]:
+        for p in f["provenance"]:
+            m = re.match(r"known failed output:\s*([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)", p)
+            if m:
+                expect(f"{m.group(1)}/{m.group(2)}" in case_refs,
+                       f"mode {f['id']} provenance -> no calibration case {m.group(1)}/{m.group(2)}")
 
     runner = manifest.get("runner", {})
     if "replay_fixture" in runner:

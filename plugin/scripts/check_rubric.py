@@ -9,9 +9,10 @@ Usage: uv run check_rubric.py <pack-dir> [rubric-file]
 Schema-checks rubric.yaml (or the given pack-relative rubric-file) against
 rubric.schema.json, then cross-checks: unique criterion ids, failure_modes
 exist in failure-taxonomy.yaml, contiguous scale keys, anchors that name no
-observable behavior (vague-criterion lint), deterministic honesty against the
-taxonomy (FR-8), and judge-protocol.yaml completeness. Non-fatal notes:
-uncovered modes, missing vetoes, absent human-review-guide.md.
+observable behavior ([vague_criterion]), deterministic honesty against the
+taxonomy ([hidden_deterministic], FR-8), vetoes the calibration set expects
+([missing_veto]), and judge-protocol.yaml completeness. Non-fatal notes:
+uncovered modes, unvetoed high-severity modes, absent human-review-guide.md.
 """
 import json
 import pathlib
@@ -21,6 +22,15 @@ import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
 SCHEMAS = pathlib.Path(__file__).resolve().parent.parent / "schemas"
+
+# Anchor words that grade enthusiasm, not behavior. An anchor built only from
+# these (plus glue) gives two disagreeing judges nothing to point at.
+VAGUE = {"quality", "good", "poor", "acceptable", "excellent", "great", "bad",
+         "fine", "strong", "weak", "high", "low", "clear", "unclear", "clarity",
+         "insightful", "thorough", "deep", "shallow", "well-organized",
+         "well-written", "overall", "mediocre", "adequate", "inadequate"}
+GLUE = {"the", "a", "an", "is", "are", "of", "and", "or", "very", "quite",
+        "somewhat", "report", "output", "response", "answer"}
 
 ok = True
 
@@ -60,18 +70,32 @@ def main():
         if "scale" in c:
             ks = sorted(int(k) for k in c["scale"])
             expect(ks == list(range(len(ks))), f"{label} scale keys not contiguous from 0: {ks}")
-            # ponytail: 3-word floor as vague-anchor proxy ("Poor quality."); the
-            # full anti-pattern lexicon is the validate skill's job
             for k, anchor in c["scale"].items():
-                expect(len(str(anchor).split()) >= 3,
-                       f"{label} scale[{k}] names no observable behavior: {anchor!r}")
+                words = [w.strip(".,;:()").lower() for w in str(anchor).split()]
+                vague = len(words) < 3 or all(w in VAGUE or w in GLUE for w in words)
+                expect(not vague,
+                       f"[vague_criterion] {label} scale[{k}] names no observable behavior: {anchor!r}")
         if primaries and all(p == "deterministic" for p in primaries):
             expect(c["deterministic"],
-                   f"{label} deterministic: false but every mapped mode is primary: deterministic (FR-8)")
+                   f"[hidden_deterministic] {label} deterministic: false but every mapped mode is primary: deterministic (FR-8)")
 
     uncovered = sorted(set(modes) - covered)
     if uncovered:
         print(f"note: modes with no criterion (coverage audit will flag): {uncovered}")
+
+    # Missing-veto, hardened: the calibration set records which criteria humans
+    # made zero-tolerance. A veto expected there but weighted (or absent) in
+    # this rubric lets a disqualifying failure survive aggregation.
+    cal_path = pack / "calibration.jsonl"
+    if cal_path.exists():
+        kinds = {c["id"]: c["kind"] for c in crits}
+        expected_vetoes = {k for l in cal_path.read_text().splitlines() if l
+                           for k in json.loads(l)["expected"]["vetoes"]}
+        for k in sorted(expected_vetoes):
+            expect(kinds.get(k) == "veto",
+                   f"[missing_veto] calibration expects veto {k}; rubric has "
+                   f"{'kind: ' + kinds[k] if k in kinds else 'no such criterion'}")
+
     veto_covered = {fm for c in crits if c["kind"] == "veto" for fm in c["failure_modes"]}
     if not any(c["kind"] == "veto" for c in crits):
         highs = sorted(m for m, f in modes.items() if f["severity"] in ("critical", "high"))
