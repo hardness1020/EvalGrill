@@ -16,7 +16,7 @@ import sys
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
-SCHEMAS = pathlib.Path(__file__).resolve().parent.parent / "schemas"
+SCHEMAS = pathlib.Path(__file__).resolve().parent.parent / "plugin" / "schemas"
 
 
 def load_schema(name):
