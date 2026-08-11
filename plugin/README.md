@@ -4,7 +4,7 @@ Claude Code plugin: `/evalgrill` router + four phase skills (analyze → dataset
 
 ## Prerequisites
 
-- Claude Code ≥ 2.1.216 (bare `/evalgrill` aliasing of namespaced skills)
+- Claude Code ≥ 2.1.216 (bare `/evalgrill` aliasing of namespaced skills). Headless `-p` runs need the namespaced form `/evalgrill:evalgrill` — the bare alias doesn't resolve there (observed at 2.1.227).
 - [uv](https://docs.astral.sh/uv/) — bundled scripts are PEP 723 single-file scripts run via `uv run`
 
 ## Dev loop (recommended)
