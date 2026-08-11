@@ -44,7 +44,7 @@ Each mode in `failure-taxonomy.yaml` carries:
 - `evaluation_method` — deterministic before rubric before human_review: if a script could check it, `primary: deterministic` even when a rubric backstops it as `secondary`.
 - `provenance` — one or more pointers quoting step-1 inventory labels, each naming what that evidence showed.
 
-**Grounding gate** (the anti-generic rule): a mode you cannot ground in inventoried evidence stays out of the taxonomy — record it in `eval-problem.md` under *Suspected, ungrounded* instead, so a later phase with more evidence can promote it. Fewer grounded modes beat a plausible checklist.
+**Grounding gate** (the anti-generic rule): a mode enters the taxonomy only with provenance from the inventory. Any inventoried evidence qualifies — an observed failure is the strongest grounding; rules, guidelines, and requirements also count, and the provenance pointer shows which kind backs the mode. A mode you cannot ground stays out — record it in `eval-problem.md` under *Suspected, ungrounded* instead, so a later phase with more evidence can promote it. Fewer grounded modes beat a plausible checklist.
 
 ### 4. Derive dimensions
 
