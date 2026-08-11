@@ -1,0 +1,13 @@
+# local scratch / frozen wayfinder archive
+.scratch/
+
+# python
+__pycache__/
+.venv/
+
+# macOS
+.DS_Store
+
+# local env / credentials (platform API keys per issue #12)
+.env
+.env.*
