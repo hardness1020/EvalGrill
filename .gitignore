@@ -11,3 +11,6 @@ __pycache__/
 # local env / credentials (platform API keys per issue #12)
 .env
 .env.*
+
+CLAUDE.md
+CONTEXT.md
