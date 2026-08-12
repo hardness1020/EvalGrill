@@ -62,7 +62,7 @@ PAIRWISE = {
 def envelope(**kw):
     env = {"type": "result", "subtype": "success", "is_error": False, "result": "done",
            "structured_output": {"level": 2, "rationale": "weighs the correction"},
-           "modelUsage": {"claude-utility-haiku": {"outputTokens": 20},
+           "modelUsage": {"claude-internal-utility": {"outputTokens": 20},
                           "claude-test-model-19990101": {"outputTokens": 188}},
            "total_cost_usd": 0.004}
     return env | kw
