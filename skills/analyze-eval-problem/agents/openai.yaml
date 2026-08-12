@@ -1,0 +1,3 @@
+interface:
+  display_name: "Analyze Eval Problem"
+  short_description: "Agent failures to taxonomy and dimensions"

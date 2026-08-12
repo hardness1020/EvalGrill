@@ -1,0 +1,5 @@
+interface:
+  display_name: "EvalGrill"
+  short_description: "Report EvalPack status, route to a phase"
+policy:
+  allow_implicit_invocation: false

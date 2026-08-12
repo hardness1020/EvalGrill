@@ -1,0 +1,3 @@
+interface:
+  display_name: "Build Eval Dataset"
+  short_description: "Tasks engineered to expose failure modes"
