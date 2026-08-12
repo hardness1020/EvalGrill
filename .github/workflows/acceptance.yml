@@ -1,0 +1,16 @@
+# PRD §30 acceptance run: fully offline and deterministic (ADR-0002).
+# Committed golden pack + scripted judge; no secrets, no network judges.
+# Live smokes and exporter contract tests live in their own workflow (map
+# ticket #24).
+name: acceptance
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  section-30:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run tests/acceptance_30.py
