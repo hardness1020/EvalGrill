@@ -13,7 +13,7 @@ Thin dispatcher. Methodology lives in the four phase skills; this skill locates 
 Take the pack dir from the arguments when given. Otherwise glob `**/evalgrill.yaml` and `**/failure-taxonomy.yaml` (early packs have no manifest yet) from the working directory:
 
 - one pack → use its directory
-- several → ask the user which (AskUserQuestion)
+- several → ask the user which
 - none → new eval; recommend `analyze`, which creates the directory
 
 ## 2. Read the state
@@ -29,14 +29,14 @@ File presence in the pack dir decides the stage; when `evalgrill.yaml` exists, r
 
 ## 3. Route
 
-Subcommand named → invoke that skill (Skill tool), passing the pack dir as args. When the named phase's inputs are missing (e.g. `rubric` with no `dataset.jsonl`), say so and let the user proceed or redirect — their call.
+Subcommand named → invoke that skill, passing the pack dir as args. When the named phase's inputs are missing (e.g. `rubric` with no `dataset.jsonl`), say so and let the user proceed or redirect — their call.
 
 | Subcommand | Skill |
 |---|---|
-| `analyze` | `evalgrill:analyze-eval-problem` |
-| `dataset` | `evalgrill:build-eval-dataset` |
-| `rubric` | `evalgrill:design-eval-rubric` |
-| `validate` | `evalgrill:validate-eval-design` |
+| `analyze` | `analyze-eval-problem` |
+| `dataset` | `build-eval-dataset` |
+| `rubric` | `design-eval-rubric` |
+| `validate` | `validate-eval-design` |
 
 No subcommand → report and recommend, never auto-run:
 
