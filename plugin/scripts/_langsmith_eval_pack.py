@@ -78,6 +78,14 @@ def _judge_client():
             # support; tool calling is the one method they all do.
             def with_structured_output(self, schema, **kw):
                 kw.setdefault("method", "function_calling")
+                # sonnet-5 sometimes states the score in prose inside
+                # `reasoning` and closes the tool args without `score`
+                if isinstance(schema, dict) and "score" in schema.get("properties", {}):
+                    props = dict(schema["properties"])
+                    props["score"] = {**props["score"], "description": (
+                        (props["score"].get("description") or "") +
+                        " You MUST emit this field; reasoning alone is invalid.")}
+                    schema = {**schema, "properties": props}
                 return super().with_structured_output(schema, **kw)
 
         _client = FnCallJudge(
@@ -98,10 +106,13 @@ def judge_raw(crit, evidence, output):
         ev = _judges[crit["id"]] = create_llm_as_judge(
             prompt=crit["prompt_template"], feedback_key=crit["id"],
             judge=_judge_client(), choices=crit["choices"])
-    try:
-        r = ev(inputs=evidence, outputs=output)
-    except Exception:  # one wrapper retry (runner-contract convention)
-        r = ev(inputs=evidence, outputs=output)
+    for attempt in range(4):  # score omission is stochastic; retry harder
+        try:
+            r = ev(inputs=evidence, outputs=output)
+            break
+        except Exception:
+            if attempt == 3:
+                raise
     if r["score"] is None:
         raise RuntimeError(f"judge abstained on {crit['id']}")
     if crit["kind"] == "veto":
