@@ -219,8 +219,8 @@ def make_runner(name, pack, manifest):
         return ReplayRunner(pack / fixture)
     if name == "claude-cli":
         preflight_claude_auth()
-        return ClaudeCliRunner(pack, cfg.get("model", "claude-haiku-4-5-20251001"),
-                               cfg.get("timeout_s", 120), cfg.get("effort"))
+        return ClaudeCliRunner(pack, cfg.get("model", "claude-sonnet-5"),
+                               cfg.get("timeout_s", 120), cfg.get("effort", "medium"))
     sys.exit(f"unknown runner {name!r} — use replay or claude-cli")
 
 

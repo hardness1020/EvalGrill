@@ -116,7 +116,7 @@ def main():
     data = {"schema_version": manifest["schema_version"],
             "project": manifest["name"],
             "status": manifest.get("status"),
-            "judge_model": (manifest.get("runner") or {}).get("model") or "claude-haiku-4-5",
+            "judge_model": (manifest.get("runner") or {}).get("model") or "claude-sonnet-5",
             "criteria": compile_criteria(rubric),
             "dataset": compile_dataset(args.pack, tasks),
             "calibration": compile_calibration(args.pack, cases, tasks_by_id)}
