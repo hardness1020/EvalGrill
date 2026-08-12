@@ -30,7 +30,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PACK = ROOT / "demo" / "golden-pack"
-SCRIPTS = ROOT / "plugin" / "scripts"
+SCRIPTS = ROOT / "scripts"
 
 ARTIFACTS = [  # PRD §30 "EvalGrill must produce"
     "failure-taxonomy.yaml", "evaluation-dimensions.yaml", "dataset.jsonl",

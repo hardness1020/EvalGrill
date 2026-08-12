@@ -16,9 +16,9 @@ knowledge outside `golden-pack/sources/`.
   judge: acceptance detections replay these; live LLM runs are dogfood
   evidence only (ADR-0002).
 
-Validate: `uv run plugin/scripts/check_pack.py demo/golden-pack`
-Audit (all seven detections): `uv run plugin/scripts/audit_pack.py demo/golden-pack --runner replay`
-plus `uv run plugin/scripts/check_rubric.py demo/golden-pack fixtures/draft-rubric.yaml` for the rubric defects
+Validate: `uv run scripts/check_pack.py demo/golden-pack`
+Audit (all seven detections): `uv run scripts/audit_pack.py demo/golden-pack --runner replay`
+plus `uv run scripts/check_rubric.py demo/golden-pack fixtures/draft-rubric.yaml` for the rubric defects
 Acceptance (the §30 done-bar: all of the above + artifact list + all three exports): `uv run tests/acceptance_30.py`, run in CI by `.github/workflows/acceptance.yml`
 
 ## Spoiler map — where each §30 detection is planted

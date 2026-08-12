@@ -9,12 +9,12 @@ EvalGrill is at v0.1, dogfood stage: the design is still being validated against
 **Most likely to be accepted**
 
 - Bug fixes with a reproduction
-- Reliability and correctness fixes in the scripts (`plugin/scripts/`) and exporters
+- Reliability and correctness fixes in the scripts (`scripts/`) and exporters
 - Documentation fixes where the docs and the code disagree
 
 **Least likely to be accepted**
 
-- New features, new skills, or new export targets (the roadmap is tracked in [`docs/prd.md`](docs/prd.md))
+- New features, new skills, or new export targets (the roadmap is maintained outside the repo; propose via an issue first)
 - Large refactors or PRs touching many files at once
 - Fixes to the planted defects in the Demo Corpus (see below: they are the test)
 
@@ -26,30 +26,38 @@ Bug reports should include: what you ran, what you expected, what happened, and 
 
 ## Development setup
 
-Requires [Claude Code](https://claude.com/claude-code) ≥ 2.1.216 and [uv](https://docs.astral.sh/uv/). No Python environment setup: all scripts are single-file PEP 723 scripts run via `uv run`.
+Requires [Claude Code](https://claude.com/claude-code) ≥ 2.1.216 (bare `/evalgrill` aliasing of namespaced skills) and [uv](https://docs.astral.sh/uv/). No Python environment setup: all scripts are single-file PEP 723 scripts run via `uv run`. The repo root is the plugin.
 
 ```bash
 git clone https://github.com/hardness1020/EvalGrill
 cd EvalGrill
-claude --plugin-dir ./plugin   # loads the plugin in place, session-only
+claude --plugin-dir .   # loads the plugin in place, session-only
 ```
 
-Edit skills, then `/reload-plugins` inside the session. Do not develop against `plugin install`: marketplace installs copy to a cache and silently run stale code. Details in the [plugin README](plugin/README.md).
+Edit skills, then `/reload-plugins` inside the session; no restart needed. Do not develop against `plugin install`: marketplace installs copy to a cache and silently run stale code.
+
+Two dev-loop gotchas:
+
+- Headless `-p` runs need the namespaced form `/evalgrill:evalgrill`: the bare alias doesn't resolve there (observed at 2.1.227).
+- With the opt-in Bash sandbox enabled, the first cold-cache `uv run` prompts for PyPI domains; allow `pypi.org` and `files.pythonhosted.org` in `sandbox.network.allowedDomains`.
 
 ## Testing
 
 Everything a PR needs runs offline, with no secrets:
 
 ```bash
-claude plugin validate ./plugin --strict                                  # manifest + skill frontmatter
-uv run plugin/scripts/check_pack.py demo/golden-pack                      # schema + referential integrity
-uv run plugin/scripts/audit_pack.py demo/golden-pack --runner replay      # all seven detections
-uv run tests/test_export_braintrust.py                                    # contract tests, one per surface
+claude plugin validate . --strict                                  # marketplace manifest
+claude plugin validate .claude-plugin/plugin.json --strict         # plugin manifest + skill frontmatter
+uv run scripts/check_pack.py demo/golden-pack                      # schema + referential integrity
+uv run scripts/audit_pack.py demo/golden-pack --runner replay      # all seven detections
+uv run tests/test_export_braintrust.py                             # contract tests, one per surface
 uv run tests/test_export_langsmith.py
 uv run tests/test_export_phoenix.py
 uv run tests/test_judge_runner.py
-uv run tests/acceptance_30.py                                             # the full acceptance bar
+uv run tests/acceptance_30.py                                      # the full acceptance bar
 ```
+
+Note: the plugin-manifest validate exits 1 if you keep a local `CLAUDE.md` at the repo root (a benign warning; the plugin runtime ignores plugin-root CLAUDE.md). Fresh clones pass clean.
 
 CI runs the contract tests and the acceptance run on every PR. The live platform smokes (`live-smoke.yml`) need maintainer secrets and run on dispatch/release only; you do not need platform accounts to contribute.
 

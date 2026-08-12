@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "evalgrill",
-      "source": "./plugin",
+      "source": "./",
       "description": "Design trustworthy evaluations for AI tasks"
     }
   ]

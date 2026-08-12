@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv run plugin/scripts/export_braintrust.py demo/golden-pack
+      - run: uv run scripts/export_braintrust.py demo/golden-pack
       - run: uv run demo/golden-pack/exports/braintrust/eval_pack.py
   langsmith:
     runs-on: ubuntu-latest
@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv run plugin/scripts/export_langsmith.py demo/golden-pack
+      - run: uv run scripts/export_langsmith.py demo/golden-pack
       - run: uv run demo/golden-pack/exports/langsmith/eval_pack.py
   phoenix:
     runs-on: ubuntu-latest
@@ -55,5 +55,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: curl -sf --retry 30 --retry-delay 2 --retry-all-errors http://localhost:6006 -o /dev/null
-      - run: uv run plugin/scripts/export_phoenix.py demo/golden-pack
+      - run: uv run scripts/export_phoenix.py demo/golden-pack
       - run: uv run demo/golden-pack/exports/phoenix/eval_pack.py

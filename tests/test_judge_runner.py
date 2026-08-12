@@ -30,7 +30,7 @@ def expect(cond, msg):
         print(f"FAIL {msg}")
 
 
-spec = importlib.util.spec_from_file_location("audit_pack", ROOT / "plugin" / "scripts" / "audit_pack.py")
+spec = importlib.util.spec_from_file_location("audit_pack", ROOT / "scripts" / "audit_pack.py")
 ap = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ap)
 

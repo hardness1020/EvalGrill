@@ -22,7 +22,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PACK = ROOT / "demo" / "golden-pack"
-EXPORTER = ROOT / "plugin" / "scripts" / "export_langsmith.py"
+EXPORTER = ROOT / "scripts" / "export_langsmith.py"
 
 ok = True
 
