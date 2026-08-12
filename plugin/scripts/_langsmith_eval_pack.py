@@ -84,7 +84,7 @@ def _judge_client():
             model=os.environ.get("EVALGRILL_JUDGE_MODEL", DATA["judge_model"]),
             base_url=os.environ.get("EVALGRILL_JUDGE_BASE_URL", "https://api.anthropic.com/v1/"),
             api_key=os.environ.get("EVALGRILL_JUDGE_API_KEY") or os.environ["ANTHROPIC_API_KEY"],
-            temperature=0, max_tokens=4096)  # long CoT truncation drops the score
+            temperature=0, max_tokens=16384)  # long CoT truncation drops the score
     return _client
 
 

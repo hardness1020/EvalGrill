@@ -79,7 +79,7 @@ def judge_raw(crit, evidence, output):
             name=crit["id"], prompt_template=crit["prompt_template"],
             choice_scores=crit["choice_scores"], use_cot=True,
             model=os.environ.get("EVALGRILL_JUDGE_MODEL", DATA["judge_model"]),
-            temperature=0, max_tokens=4096,  # long CoT truncation drops 'choice'
+            temperature=0, max_tokens=16384,  # long CoT truncation drops 'choice'
             client=client)
     try:
         r = clf(output, None, input=evidence)
