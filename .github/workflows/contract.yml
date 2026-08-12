@@ -1,0 +1,23 @@
+# Offline contract tests (PRD §21): pinned SDK versions are the compatibility
+# surface under test; judge calls stubbed from human labels. No secrets, no
+# network judges. Live golden-path smokes live in live-smoke.yml.
+name: contract
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - test_export_braintrust
+          - test_export_langsmith
+          - test_export_phoenix
+          - test_judge_runner
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run tests/${{ matrix.test }}.py

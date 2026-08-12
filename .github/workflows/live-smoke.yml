@@ -1,0 +1,55 @@
+# Live golden-path smokes (PRD §21; map locked decision: golden path only).
+# Each leg runs the committed golden pack's generated eval_pack.py against the
+# real platform on its default 2 calibration cases. Judge: claude-sonnet-5 via
+# the Braintrust AI proxy (org must have an Anthropic provider configured).
+# Secrets: BRAINTRUST_API_KEY, LANGSMITH_API_KEY, LANGSMITH_WORKSPACE_ID.
+# Phoenix needs none — local service container, auth off.
+name: live-smoke
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+# Datasets are upserted/recreated by canonical id — two runs racing would
+# collide, so queue instead.
+concurrency:
+  group: live-smoke
+  cancel-in-progress: false
+jobs:
+  braintrust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run demo/golden-pack/exports/braintrust/eval_pack.py
+  langsmith:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      LANGSMITH_WORKSPACE_ID: ${{ secrets.LANGSMITH_WORKSPACE_ID }}
+      EVALGRILL_JUDGE_BASE_URL: https://api.braintrust.dev/v1/proxy
+      EVALGRILL_JUDGE_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run demo/golden-pack/exports/langsmith/eval_pack.py
+  phoenix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      phoenix:
+        image: arizephoenix/phoenix:version-19.21.0
+        ports:
+          - 6006:6006
+    env:
+      PHOENIX_BASE_URL: http://localhost:6006
+      EVALGRILL_JUDGE_BASE_URL: https://api.braintrust.dev/v1/proxy
+      EVALGRILL_JUDGE_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: curl -sf --retry 30 --retry-delay 2 --retry-all-errors http://localhost:6006 -o /dev/null
+      - run: uv run demo/golden-pack/exports/phoenix/eval_pack.py
