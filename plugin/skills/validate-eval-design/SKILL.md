@@ -40,7 +40,7 @@ uv run "${CLAUDE_PLUGIN_ROOT}/scripts/audit_pack.py" <pack-dir> [--runner NAME]
 
 One command generates both artifacts. Coverage: one row per failure mode — the tasks that target it, the criteria that detect it, the calibration cases whose human labels show it firing. Calibration: every case × every run × every criterion through the Judge Runner seam (one criterion, or one presentation order of a pair, per Judge Call), then EvalGen metrics — **Coverage** (human-flagged failures the judge catches), **FFR** (human passes wrongly failed), **Alignment** (harmonic mean of Coverage and 1−FFR) — plus per-criterion agreement and veto recall.
 
-Runner comes from `evalgrill.yaml`'s `runner:` block; `--runner` overrides. v0.1 wires `replay` (the Scripted Judge replaying `runner.replay_fixture`; a missing line is a loud `replay_miss`, never a fabricated verdict). `FAIL` lines are structural faults in the pack or fixture — fix them; `DETECT` lines are the product working.
+Runner comes from `evalgrill.yaml`'s `runner:` block; `--runner` overrides. Two runners: `replay` (the Scripted Judge replaying `runner.replay_fixture`; a missing line is a loud `replay_miss`, never a fabricated verdict) and `claude-cli` (live `claude -p` per ADR-0001 — pinned `runner.model`, caller-enforced `runner.timeout_s`, subscription auth preflight; a live sweep costs one judge call per case × run × criterion, so quote the count before running). `FAIL` lines are structural faults in the pack or fixture — fix them; `DETECT` lines are the product working.
 
 ### 4. Read the findings
 

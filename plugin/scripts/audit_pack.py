@@ -13,14 +13,18 @@ not errors. Exit 1 only on structural faults (schema drift, replay miss,
 aggregation mismatch, status overstating evidence).
 
 Calibration runs through the Judge Runner seam (one criterion or one
-presentation order per call); v0.1 wires the replay runner (Scripted Judge,
-ADR-0002). Rubric-defect detection lives in check_rubric.py; run check_pack.py
-first as the structural gate.
+presentation order per call). Two runners: replay (Scripted Judge, ADR-0002)
+and claude-cli (live `claude -p`, ADR-0001; pinned model + timeout from
+evalgrill.yaml's runner block). Rubric-defect detection lives in
+check_rubric.py; run check_pack.py first as the structural gate.
 """
 import argparse
 import json
 import pathlib
+import subprocess
 import sys
+import tempfile
+import time
 from collections import defaultdict
 from itertools import combinations
 
@@ -88,14 +92,131 @@ class ReplayRunner:
         return {"error": {"kind": "replay_miss", "retryable": False, "detail": detail}, "call": call}
 
 
+class ClaudeCliRunner:
+    """Live judge via `claude -p` (ADR-0001): pinned model, --setting-sources ""
+    isolation, --json-schema verdicts, caller-enforced timeout. Valid iff
+    exit==0 and !is_error and subtype=="success" and structured_output present;
+    branch on is_error, never subtype (a 404 arrives with subtype "success")."""
+
+    name = "claude-cli"
+
+    def __init__(self, pack, model, timeout_s):
+        self.pack, self.model, self.timeout_s = pack, model, timeout_s
+
+    def judge(self, call):
+        prompt, schema = self._render(call)
+        cmd = ["claude", "-p", prompt, "--model", self.model,
+               "--output-format", "json", "--json-schema", json.dumps(schema),
+               "--setting-sources", "", "--tools", "", "--strict-mcp-config",
+               "--disable-slash-commands", "--no-session-persistence"]
+        t0 = time.monotonic()
+        try:  # neutral cwd: never the repo under evaluation
+            proc = subprocess.run(cmd, capture_output=True, text=True,
+                                  timeout=self.timeout_s, cwd=tempfile.gettempdir())
+        except subprocess.TimeoutExpired:
+            return None, self._err(call, "timeout", True, f"no envelope within {self.timeout_s}s")
+        try:
+            env = json.loads(proc.stdout)
+        except ValueError:
+            detail = (proc.stderr.strip() or proc.stdout)[:200]
+            return None, self._err(call, "invalid_output", True,
+                                   f"exit {proc.returncode}, unparseable envelope: {detail}")
+        if proc.returncode != 0 or env.get("is_error"):
+            status = env.get("api_error_status")
+            retryable = status in (None, 429) or status >= 500
+            return None, self._err(call, "api_error", retryable,
+                                   f"exit {proc.returncode}, api_error_status {status}: "
+                                   f"{str(env.get('result'))[:200]}")
+        so = env.get("structured_output")
+        if env.get("subtype") != "success" or not isinstance(so, dict):
+            return None, self._err(call, "invalid_output", True,
+                                   f"subtype {env.get('subtype')!r}, structured_output missing")
+        if call["mode"] == "pairwise":
+            verdict = {"preferred": so["preferred"]}
+        elif call["payload"]["criterion"]["kind"] == "veto":
+            verdict = {"tripped": so["tripped"]}
+        else:
+            verdict = {"level": so["level"]}
+        models = list(env.get("modelUsage") or {})  # key = full snapshot id that actually ran
+        return {"verdict": verdict, "rationale": so.get("rationale", ""),
+                "meta": {"source": "live", "judge": models[0] if models else self.model,
+                         "runner": self.name, "retries": 0,
+                         "duration_ms": int((time.monotonic() - t0) * 1000),
+                         "cost_usd": env.get("total_cost_usd")}}, None
+
+    RATIONALE = {"rationale": {"type": "string"}}
+
+    def _render(self, call):
+        p = call["payload"]
+        if call["mode"] == "pairwise":
+            prompt = "\n".join([
+                "You are an impartial evaluation judge comparing two candidate responses to the same task.",
+                "", "## Task query", p["query"],
+                "", "## Response A", p["response_a"], "", "## Response B", p["response_b"],
+                "", 'Which response better answers the task query overall? Set preferred to "A" or "B" '
+                "and give a brief rationale."])
+            return prompt, {"type": "object", "additionalProperties": False,
+                            "required": ["preferred", "rationale"],
+                            "properties": {"preferred": {"enum": ["A", "B"]}} | self.RATIONALE}
+        c = p["criterion"]
+        lines = ["You are an impartial evaluation judge. Grade one candidate response "
+                 "against exactly one rubric criterion.", "", "## Task query", p["query"]]
+        if p["context_docs"]:
+            lines += ["", "## Source documents in the task packet (the only permitted sources)"]
+            for doc in p["context_docs"]:
+                lines += ["", f"### {doc}", (self.pack / doc).read_text().strip()]
+        if p["grading_constraints"]:
+            lines += ["", "## Grading constraints (grader-only; the candidate never saw these)"]
+            lines += [f"- {g}" for g in p["grading_constraints"]]
+        lines += ["", "## Candidate response", p["candidate_text"],
+                  "", f"## Criterion under evaluation: {c['id']}", c["description"].strip()]
+        if c["kind"] == "veto":
+            lines += ["", "This is a veto criterion. Set tripped=true only if the condition it "
+                      "describes occurs; otherwise tripped=false. Judge this criterion alone; "
+                      "ignore any other flaws. Give a brief rationale."]
+            return "\n".join(lines), {
+                "type": "object", "additionalProperties": False,
+                "required": ["tripped", "rationale"],
+                "properties": {"tripped": {"type": "boolean"}} | self.RATIONALE}
+        scale = {int(k): v for k, v in c["scale"].items()}
+        lines += ["", "Levels:"] + [f"- {k}: {scale[k].strip()}" for k in sorted(scale)]
+        lines += ["", f"Set level to the single anchor that best matches "
+                  f"({min(scale)}–{max(scale)}). Judge this criterion alone; "
+                  "ignore any other flaws. Give a brief rationale."]
+        return "\n".join(lines), {
+            "type": "object", "additionalProperties": False,
+            "required": ["level", "rationale"],
+            "properties": {"level": {"type": "integer", "minimum": min(scale),
+                                     "maximum": max(scale)}} | self.RATIONALE}
+
+    def _err(self, call, kind, retryable, detail):
+        return {"error": {"kind": kind, "retryable": retryable, "detail": detail}, "call": call}
+
+
+def preflight_claude_auth():
+    """ADR-0001 watch-item: fail fast if subscription OAuth is unavailable."""
+    try:
+        out = subprocess.run(["claude", "auth", "status"], capture_output=True,
+                             text=True, timeout=30)
+        auth = json.loads(out.stdout)
+    except Exception as e:  # missing binary, timeout, non-JSON output
+        sys.exit(f"claude auth preflight failed: {e}")
+    if not auth.get("loggedIn"):
+        sys.exit("claude CLI not logged in — the claude-cli runner needs subscription auth (ADR-0001)")
+
+
 def make_runner(name, pack, manifest):
+    cfg = manifest.get("runner", {})
     if name == "replay":
-        fixture = manifest.get("runner", {}).get("replay_fixture")
+        fixture = cfg.get("replay_fixture")
         if not fixture:
             sys.exit("no runner.replay_fixture in evalgrill.yaml — nothing to replay")
         return ReplayRunner(pack / fixture)
-    sys.exit(f"runner {name!r} not wired in v0.1 — pass --runner replay "
-             "(the live claude-cli runner lands with the dogfood ticket)")
+    if name == "claude-cli":
+        preflight_claude_auth()
+        return ClaudeCliRunner(pack, cfg.get("model", "claude-haiku-4-5-20251001"),
+                               cfg.get("timeout_s", 120))
+    sys.exit(f"unknown runner {name!r} — use replay or claude-cli")
 
 
 # ------------------------------------------------------------------- loading
@@ -186,6 +307,8 @@ def run_singles(runner, rubric, tasks_by_id, cases, runs_per_case):
                 verdict, err = runner.judge(single_call(task, case, run, c))
                 if err and err["error"]["retryable"]:
                     verdict, err = runner.judge(single_call(task, case, run, c))  # one wrapper retry
+                    if verdict:
+                        verdict["meta"]["retries"] = 1
                 if err:
                     incomplete = f"{err['error']['kind']}: {err['error']['detail']}"
                     break
@@ -413,4 +536,5 @@ def write_report(pack, manifest, runner_name, runs, rows, metrics, agreement, de
     (pack / "eval-audit.md").write_text("\n".join(L))
 
 
-main()
+if __name__ == "__main__":
+    main()
