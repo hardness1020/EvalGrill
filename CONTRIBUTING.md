@@ -43,21 +43,7 @@ Two dev-loop gotchas:
 
 ## Testing
 
-Everything a PR needs runs offline, with no secrets:
-
-```bash
-claude plugin validate . --strict                                  # marketplace manifest
-claude plugin validate .claude-plugin/plugin.json --strict         # plugin manifest + skill frontmatter
-uv run scripts/check_pack.py demo/golden-pack                      # schema + referential integrity
-uv run scripts/audit_pack.py demo/golden-pack --runner replay      # all seven detections
-uv run tests/test_export_braintrust.py                             # contract tests, one per surface
-uv run tests/test_export_langsmith.py
-uv run tests/test_export_phoenix.py
-uv run tests/test_judge_runner.py
-uv run tests/acceptance_30.py                                      # the full acceptance bar
-```
-
-Note: the plugin-manifest validate exits 1 if you keep a local `CLAUDE.md` at the repo root (a benign warning; the plugin runtime ignores plugin-root CLAUDE.md). Fresh clones pass clean.
+Everything a PR needs runs offline, with no secrets: run the checks listed in [AGENTS.md](AGENTS.md#validation).
 
 CI runs the contract tests and the acceptance run on every PR. The live platform smokes (`live-smoke.yml`) need maintainer secrets and run on dispatch/release only; you do not need platform accounts to contribute.
 
@@ -67,11 +53,9 @@ CI runs the contract tests and the acceptance run on every PR. The live platform
 
 ## Pull requests
 
-- Target `main`, one concern per PR. Small PRs get reviewed; big ones get closed.
-- [Conventional commits](https://www.conventionalcommits.org/), under 50 words, short bullets when a body is needed.
-- No `Co-Authored-By` trailers or generated-with footers.
-- Say what changed and why in the description; link the issue it resolves.
-- All offline checks above must pass.
+- Follow the conventions in [AGENTS.md](AGENTS.md#conventions): [conventional commits](https://www.conventionalcommits.org/), one concern per PR, target `main`, link the issue it resolves. Small PRs get reviewed; big ones get closed.
+- Say what changed and why in the description.
+- All offline checks in [AGENTS.md](AGENTS.md#validation) must pass.
 
 ## License
 
