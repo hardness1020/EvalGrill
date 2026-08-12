@@ -101,6 +101,7 @@ scripts/           uv/PEP 723 scripts: checks, audit, exporters
 schemas/           canonical EvalPack JSON Schemas
 demo/              NR-7 Demo Corpus + committed golden EvalPack
 tests/             §30 acceptance run + exporter/runner contract tests
+integrations/      per-harness install docs (claude-code, codex)
 docs/adr/          architecture decision records
 ```
 
