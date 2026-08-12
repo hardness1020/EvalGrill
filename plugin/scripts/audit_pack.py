@@ -100,8 +100,8 @@ class ClaudeCliRunner:
 
     name = "claude-cli"
 
-    def __init__(self, pack, model, timeout_s):
-        self.pack, self.model, self.timeout_s = pack, model, timeout_s
+    def __init__(self, pack, model, timeout_s, effort=None):
+        self.pack, self.model, self.timeout_s, self.effort = pack, model, timeout_s, effort
 
     def judge(self, call):
         prompt, schema = self._render(call)
@@ -109,6 +109,8 @@ class ClaudeCliRunner:
                "--output-format", "json", "--json-schema", json.dumps(schema),
                "--setting-sources", "", "--tools", "", "--strict-mcp-config",
                "--disable-slash-commands", "--no-session-persistence"]
+        if self.effort:
+            cmd += ["--effort", self.effort]
         t0 = time.monotonic()
         try:  # neutral cwd: never the repo under evaluation
             proc = subprocess.run(cmd, capture_output=True, text=True,
@@ -137,9 +139,12 @@ class ClaudeCliRunner:
             verdict = {"tripped": so["tripped"]}
         else:
             verdict = {"level": so["level"]}
-        models = list(env.get("modelUsage") or {})  # key = full snapshot id that actually ran
+        # modelUsage keys on full model id; alongside the judge it can list a tiny
+        # internal utility call — the judge is the entry that produced the output
+        models = env.get("modelUsage") or {}
+        judge = max(models, key=lambda k: models[k].get("outputTokens", 0)) if models else self.model
         return {"verdict": verdict, "rationale": so.get("rationale", ""),
-                "meta": {"source": "live", "judge": models[0] if models else self.model,
+                "meta": {"source": "live", "judge": judge,
                          "runner": self.name, "retries": 0,
                          "duration_ms": int((time.monotonic() - t0) * 1000),
                          "cost_usd": env.get("total_cost_usd")}}, None
@@ -215,7 +220,7 @@ def make_runner(name, pack, manifest):
     if name == "claude-cli":
         preflight_claude_auth()
         return ClaudeCliRunner(pack, cfg.get("model", "claude-haiku-4-5-20251001"),
-                               cfg.get("timeout_s", 120))
+                               cfg.get("timeout_s", 120), cfg.get("effort"))
     sys.exit(f"unknown runner {name!r} — use replay or claude-cli")
 
 

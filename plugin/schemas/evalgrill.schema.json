@@ -48,6 +48,7 @@
       "properties": {
         "default": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
         "model": { "type": "string" },
+        "effort": { "enum": ["low", "medium", "high", "xhigh", "max"] },
         "timeout_s": { "type": "integer", "minimum": 1 },
         "replay_fixture": { "type": "string" }
       }

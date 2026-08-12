@@ -62,7 +62,9 @@ PAIRWISE = {
 def envelope(**kw):
     env = {"type": "result", "subtype": "success", "is_error": False, "result": "done",
            "structured_output": {"level": 2, "rationale": "weighs the correction"},
-           "modelUsage": {"claude-test-model-19990101": {}}, "total_cost_usd": 0.004}
+           "modelUsage": {"claude-utility-haiku": {"outputTokens": 20},
+                          "claude-test-model-19990101": {"outputTokens": 188}},
+           "total_cost_usd": 0.004}
     return env | kw
 
 
@@ -82,7 +84,7 @@ def stub(env=None, returncode=0, raise_timeout=False, stdout=None):
 
 
 def main():
-    runner = ap.ClaudeCliRunner(pack, "claude-test-model-19990101", 120)
+    runner = ap.ClaudeCliRunner(pack, "claude-test-model-19990101", 120, effort="medium")
 
     # --- golden single ordinal: verdict, meta, prompt, flags, schema
     seen = stub(envelope())
@@ -101,7 +103,8 @@ def main():
         expect(needle in prompt, f"prompt missing {needle!r}")
     for flag in (["--model", "claude-test-model-19990101"], ["--output-format", "json"],
                  ["--setting-sources", ""], ["--tools", ""], ["--strict-mcp-config"],
-                 ["--disable-slash-commands"], ["--no-session-persistence"]):
+                 ["--disable-slash-commands"], ["--no-session-persistence"],
+                 ["--effort", "medium"]):
         i = cmd.index(flag[0])
         expect(len(flag) == 1 or cmd[i + 1] == flag[1], f"flag {flag} not passed verbatim")
     expect(seen["kw"]["timeout"] == 120, "caller-enforced timeout not passed to subprocess")

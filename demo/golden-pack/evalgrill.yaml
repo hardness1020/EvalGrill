@@ -32,6 +32,7 @@ validation:
 # CLI --runner overrides. Contract pinned by map ticket "Judge Runner interface".
 runner:
   default: claude-cli # `claude -p` per ADR-0001 (subscription-first)
-  model: claude-haiku-4-5-20251001 # full snapshot id; envelope records what actually ran
+  model: claude-sonnet-5 # envelope records the full snapshot id that actually ran
+  effort: medium
   timeout_s: 120 # caller-enforced; no CLI flag exists
   replay_fixture: fixtures/scripted-verdicts.jsonl # Scripted Judge per ADR-0002
