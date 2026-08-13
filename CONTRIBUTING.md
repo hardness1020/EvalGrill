@@ -47,6 +47,10 @@ Everything a PR needs runs offline, with no secrets: run the checks listed in [A
 
 CI runs the contract tests and the acceptance run on every PR. The live platform smokes (`live-smoke.yml`) need maintainer secrets and run on dispatch/release only; you do not need platform accounts to contribute.
 
+## Releasing (maintainer)
+
+Versions are hand-managed: no npm, no changesets. Bump `version` in `.claude-plugin/plugin.json`, add the matching `## <version>` section to [CHANGELOG.md](CHANGELOG.md), merge, then tag `v<version>` and push it. [`release.yml`](.github/workflows/release.yml) fails the tag if either disagrees; to recover, delete the tag, fix, re-tag. Once it passes, publish a GitHub Release for that tag: that is what triggers the live platform smokes ([`live-smoke.yml`](.github/workflows/live-smoke.yml) listens on `release: published`, not on the tag push).
+
 ## The Demo Corpus is a fixture
 
 `demo/golden-pack/fixtures/` contains deliberately defective artifacts: a vague rubric criterion, a missing veto, a judge that contradicts human labels. The acceptance bar asserts these defects are detected. **Do not fix them.** A PR that "cleans up" the fixtures breaks the test suite by design. The spoiler map in [`demo/README.md`](demo/README.md) lists every plant.
