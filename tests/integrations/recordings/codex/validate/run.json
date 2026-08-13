@@ -1,0 +1,8 @@
+{
+  "harness": "codex",
+  "leg": "validate",
+  "cli_version": "codex-cli 0.142.4",
+  "recorded_at": "2026-08-12",
+  "duration_s": 86.0,
+  "exit_code": 0
+}

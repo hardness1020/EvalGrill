@@ -1,0 +1,52 @@
+schema_version: 1
+
+dimensions:
+  - id: source_fidelity
+    description: >-
+      Every claim in a good report traces to a document that is actually attached
+      and that actually contains the claim. Named sources resolve to packet
+      documents, quotes and positions are credited to the right speaker and
+      source, and every number can be found in an identified supporting packet
+      document.
+    failure_modes:
+      - out_of_packet_citation
+      - misattributed_source_content
+      - unsupported_quantitative_claim
+
+  - id: evidence_weighting
+    description: >-
+      A good report makes the evidence hierarchy visible. Controlled human trials
+      outweigh uncontrolled pilots, animal studies, marketing, anecdotes, and
+      informal tallies; post-hoc or stale analyses are labeled as limited; and
+      corrected or superseded findings are not used at face value.
+    failure_modes:
+      - superseded_evidence_used
+      - weak_evidence_overweighted
+
+  - id: conflict_and_confidence
+    description: >-
+      A good report names material disagreements among attached sources and ties
+      its confidence to the evidence quality, consistency, dose, population,
+      correction status, and uncertainty. It is firm only where the packet
+      supports firmness and hedged where the packet is mixed or limited.
+    failure_modes:
+      - unreported_source_conflict
+      - miscalibrated_confidence
+
+  - id: safety_communication
+    description: >-
+      When a task touches adverse effects or patient use, a good report states
+      the tolerability findings documented in the packet, especially vivid or
+      disturbing dreams, GI discomfort, discontinuation, and the limits of safety
+      data, without minimizing or overstating them.
+    failure_modes:
+      - omitted_harm_caveat
+
+  - id: report_usability
+    description: >-
+      A good report answers the specific brief in a directly usable form: per
+      item where requested, with claims attached to sources, within the expected
+      short-report length, and with enough structure that the reader can map the
+      answer back to the task.
+    failure_modes:
+      - unusable_report_form

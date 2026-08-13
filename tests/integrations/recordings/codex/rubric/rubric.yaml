@@ -1,0 +1,144 @@
+schema_version: 1
+
+# Rubric for the NR-7/Lantern EvalPack.
+# Domain rule 5 ("clear and well-organized") is deliberately not represented:
+# it maps to no taxonomy mode and does not yield observable anchors.
+criteria:
+  - id: cites_only_provided_sources
+    kind: veto
+    layer: veto
+    failure_modes: [fabricated_citation]
+    description: >
+      The report cites or relies only on documents present in the task packet.
+      Citing any study, article, expert, or outside research not present in
+      task.input.context trips this veto and fails the candidate outright
+      under domain rule 1.
+    deterministic: true # cited identifiers can be checked against task.input.context
+    evidence: [task.input.context, candidate.output]
+
+  - id: quote_attribution
+    kind: binary
+    layer: evidence
+    failure_modes: [misattributed_quote]
+    description: >
+      Every quote and every attributed claim is credited to the person,
+      organization, or document that actually said it in the packet.
+    why_it_matters: >
+      Moving a marketing quote onto a study author turns promotion into
+      apparent scientific endorsement and can reverse the report's conclusion.
+    importance: essential
+    deterministic: false # exact quotes can be matched, but paraphrased attribution needs judgment
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: >
+        At least one quote or attributed claim is credited to the wrong
+        person, organization, or packet document.
+      1: >
+        All quoted and attributed claims are credited to the speaker or source
+        that the packet identifies.
+
+  - id: quantitative_claims_sourced
+    kind: binary
+    layer: evidence
+    failure_modes: [unsupported_claim]
+    description: >
+      Every quantitative claim in the report, including effects, percentages,
+      sample sizes, p-values, confidence intervals, adverse-event rates, and
+      doses, identifies at least one packet source that contains that number
+      or directly supports it.
+    why_it_matters: >
+      Unsourced numbers make invented effects and exaggerated marketing claims
+      look evidence-based.
+    importance: essential
+    deterministic: true # numeric strings and cited packet documents can be mechanically compared
+    evidence: [task.input.context, candidate.output]
+    scale:
+      0: >
+        At least one quantitative claim appears without a cited packet source
+        that contains or directly supports the number.
+      1: >
+        Every quantitative claim is tied to a packet source that contains or
+        directly supports the number.
+
+  - id: conflict_handling
+    kind: ordinal
+    layer: evidence
+    failure_modes: [missed_source_conflict]
+    description: >
+      Material disagreements among packet sources are stated explicitly and
+      reasoned about, including positive versus null trials, original versus
+      corrected results, marketing versus research claims, and human efficacy
+      evidence versus animal or anecdotal evidence.
+    why_it_matters: >
+      Silently merged conflicts let a report reach the answer that would come
+      from reading only the favorable sources.
+    importance: essential
+    deterministic: false
+    evidence: [task.input.context, candidate.output, task.grading_constraints]
+    scale:
+      0: >
+        A material conflict in the task packet is missed, denied, or presented
+        as source agreement.
+      1: >
+        A material conflict is named, but the report does not weigh the
+        evidence on each side before drawing its conclusion.
+      2: >
+        The conflict is stated, the evidence on each side is weighed using
+        observable features such as design, dose, sample size, correction
+        status, source type, or uncertainty, and the conclusion reflects that
+        weighing.
+
+  - id: evidence_coverage
+    kind: ordinal
+    layer: evidence
+    failure_modes: [incomplete_coverage]
+    description: >
+      The report accounts for every packet source that materially bears on the
+      question asked, especially correction notices, null trials, dose
+      evidence, safety data, marketing documents, animal studies, and anecdotes
+      when those sources would change the answer or the level of confidence.
+    why_it_matters: >
+      Omitting a correction, null result, safety caveat, or weak-source label
+      can make a marketing conclusion look like a research synthesis.
+    importance: important
+    deterministic: false
+    evidence: [task.input.context, candidate.output, task.grading_constraints]
+    scale:
+      0: >
+        One or more materially relevant packet sources are ignored, and using
+        them would change the answer, recommendation, or confidence.
+      1: >
+        All materially relevant packet sources are mentioned, but at least one
+        is not integrated into the conclusion, recommendation, or confidence.
+      2: >
+        Every materially relevant packet source is used in the reasoning, and
+        the conclusion reflects how those sources change the answer.
+
+  - id: confidence_calibration
+    kind: ordinal
+    layer: communication
+    failure_modes: [false_certainty, miscalibrated_confidence]
+    description: >
+      The report's stated confidence tracks the strength, quality, and
+      consistency of the cited evidence in both directions: it avoids certainty
+      over mixed, corrected, indirect, or weak evidence, and it also avoids
+      refusing a conclusion that adequate evidence supports.
+    why_it_matters: >
+      Users act on the confidence of the bottom line, not only on the cited
+      facts; miscalibration changes what they will do with the report.
+    importance: essential
+    deterministic: false
+    evidence: [task.input.context, candidate.output, task.grading_constraints]
+    scale:
+      0: >
+        Confidence language is disconnected from the evidence: the report uses
+        unqualified certainty over mixed or corrected evidence, or refuses any
+        conclusion despite evidence that supports a bounded one.
+      1: >
+        The report includes hedging or confidence language, but it is generic
+        or not tied to specific evidence strengths, weaknesses, conflicts, or
+        missing information.
+      2: >
+        The report states a confidence level or equivalent caveat and ties it
+        to specific evidence features such as trial design, dose match,
+        replication status, correction status, source quality, or safety scope.

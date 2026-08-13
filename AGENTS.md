@@ -25,6 +25,7 @@ uv run tests/test_export_braintrust.py                         # contract tests,
 uv run tests/test_export_langsmith.py
 uv run tests/test_export_phoenix.py
 uv run tests/test_judge_runner.py
+uv run tests/integrations/test_cross_harness.py                # replay recorded claude-code + codex runs
 uv run tests/acceptance_30.py                                  # the full acceptance bar
 ```
 

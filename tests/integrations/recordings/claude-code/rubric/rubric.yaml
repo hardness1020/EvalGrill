@@ -1,0 +1,199 @@
+schema_version: 1
+
+# Rubric for the NR-7 / Lantern golden pack.
+# Criterion ids are fixed by calibration.jsonl (expected.scores keys + the one
+# expected veto); anchors are written so every level is settled by pointing at
+# text in candidate.output or a document in task.input.context.
+#
+# Mode -> criterion map (7 taxonomy modes):
+#   fabricated_citation      -> cites_only_provided_sources (veto)
+#   misattributed_quote      -> quote_attribution
+#   unsupported_claim        -> quantitative_claims_sourced
+#   missed_source_conflict   -> conflict_handling
+#   incomplete_coverage      -> evidence_coverage
+#   false_certainty          -> confidence_calibration
+#   miscalibrated_confidence -> confidence_calibration
+# No mode is left uncovered.
+
+criteria:
+  - id: cites_only_provided_sources
+    kind: veto
+    layer: veto
+    failure_modes: [fabricated_citation]
+    description: >
+      Every study, author, publication or expert the report names as a source
+      appears in the packet supplied with the task. Trips when the report
+      relies on a source that is in no provided document — an invented study,
+      an outside article, a replication that exists nowhere in the packet.
+      A source named only because the task material names it (e.g. a blog's
+      own claim being checked) does not trip this; presenting such a source as
+      real evidence does.
+    why_it_matters: >
+      Domain rule 1 is zero-tolerance: a source-grounded assistant that invents
+      a citation is worse than useless downstream, because the reader cannot
+      tell the invented references from the real ones without redoing the work.
+      Partial credit here would let a fabricated study survive aggregation.
+    deterministic: true # citation strings are matchable against task.input.context; the residue (is this naming a source or quoting the artifact under review?) is the taxonomy's secondary rubric method
+    evidence:
+      - candidate.output
+      - task.input.context (every packet document, by name and content)
+      - task.input.query
+
+  - id: quote_attribution
+    kind: binary
+    layer: evidence
+    failure_modes: [misattributed_quote]
+    importance: essential
+    description: >
+      Quotes and attributed claims name the speaker and document the packet
+      actually shows them coming from.
+    why_it_matters: >
+      Moving a quote from a CEO to a trial author converts marketing into
+      scientific endorsement, and a reader who trusts the attribution reweights
+      the whole verdict on evidence that was never scientific.
+    deterministic: false # quoted text is matchable, but paraphrased attribution ("even the trial's author called it...") needs a judge
+    evidence:
+      - candidate.output
+      - task.input.context (speaker and author attributions in the packet documents)
+    scale:
+      "0": >
+        A quote or claim that exists in the packet is attributed to a different
+        person or document than the one it appears in — e.g. a company
+        statement presented as a trial author's, or a press-release figure
+        presented as a study finding.
+      "1": >
+        Every quoted or attributed statement names the speaker and document the
+        packet shows it in; marketing statements are identified as coming from
+        marketing material.
+
+  - id: quantitative_claims_sourced
+    kind: binary
+    layer: evidence
+    failure_modes: [unsupported_claim]
+    importance: important
+    description: >
+      Every number and factual claim in the report traces to a provided
+      document that actually contains it.
+    why_it_matters: >
+      A number with no document behind it cannot be checked or corrected by the
+      reader, and it propagates into whatever the report feeds — so an
+      unsourced figure degrades trust in the sourced ones next to it.
+    deterministic: true # taxonomy primary: deterministic — numbers in the output can be located in task.input.context by script; whether a cited document supports a paraphrased claim is the rubric residue
+    evidence:
+      - candidate.output
+      - task.input.context (the packet documents and the figures they report)
+      - task.grading_constraints
+    scale:
+      "0": >
+        At least one number or factual claim has no supporting packet document
+        — it appears in no provided source, or it is attributed to a document
+        that does not contain it (invented ranges, effect figures no source
+        reports).
+      "1": >
+        Every number and factual claim appears in a provided document that
+        reports it, and the report identifies which document that is.
+
+  - id: conflict_handling
+    kind: ordinal
+    layer: evidence
+    failure_modes: [missed_source_conflict]
+    importance: essential
+    description: >
+      Material disagreements between provided sources are surfaced and reasoned
+      about with packet evidence rather than merged, averaged, or name-dropped.
+    why_it_matters: >
+      A merged conclusion over a live disagreement reads as settled science to
+      the reader, who then has no signal that the packet contained a null
+      result or a correction that would have changed their decision.
+    deterministic: false
+    evidence:
+      - candidate.output
+      - task.input.context (documents that disagree on the same question)
+      - task.grading_constraints
+    scale:
+      "0": >
+        The report presents one merged conclusion and never mentions the
+        contradicting document in the packet — the null trial, the correction
+        notice, or the opposing figure goes unnamed while the report calls the
+        evidence consistent or unanimous.
+      "1": >
+        The disagreement is named but not worked: conflicting figures are
+        listed side by side as if compatible, or the report says the sources
+        differ and stops, or waves the contradiction away as a technicality
+        without using packet evidence to do so.
+      "2": >
+        The report states which documents disagree and on what, then uses
+        packet evidence — dose difference, correction notice, study design,
+        sample size — to say which conclusion is better supported, or to
+        explain why the packet cannot settle it.
+
+  - id: evidence_coverage
+    kind: ordinal
+    layer: evidence
+    failure_modes: [incomplete_coverage]
+    importance: essential
+    description: >
+      Provided documents that materially bear on the question — corrections,
+      null results, dose-ranging data, safety findings — are used, not just
+      the ones that support the report's conclusion.
+    why_it_matters: >
+      Ignoring the correcting or contradicting document produces the answer a
+      reader would get from reading only the favorable half of the packet, and
+      the omission is invisible to anyone who has not read the packet
+      themselves.
+    deterministic: false
+    evidence:
+      - candidate.output
+      - task.input.context (every document supplied with the task)
+      - task.input.query
+      - task.grading_constraints
+    scale:
+      "0": >
+        At least one provided document that would change the answer goes
+        unmentioned — a correction notice, a null trial, a dose-ranging study —
+        and the stated conclusion matches what the favorable documents alone
+        would support.
+      "1": >
+        Every material document is named, but at least one is used only in
+        passing: its bearing on the conclusion is left implicit, or it is
+        recited without affecting the answer.
+      "2": >
+        Every provided document that bears on the question is used, and the
+        correcting, null, or contradicting ones visibly shape the stated
+        conclusion.
+
+  - id: confidence_calibration
+    kind: ordinal
+    layer: communication
+    failure_modes: [false_certainty, miscalibrated_confidence]
+    importance: essential
+    description: >
+      The confidence the report expresses tracks the evidence it presents, in
+      both directions: no unqualified certainty over mixed or corrected
+      evidence, and no refusal to conclude what the packet adequately supports.
+    why_it_matters: >
+      Confidence is the part of the report a decision-maker acts on; certainty
+      over a corrected result sends a clinic the wrong way, and refusing a
+      conclusion the packet supports pushes the reader back to the sources the
+      assistant was meant to read for them.
+    deterministic: false
+    evidence:
+      - candidate.output
+      - task.input.context (strength and consistency of the packet evidence)
+      - task.grading_constraints
+    scale:
+      "0": >
+        The stated confidence contradicts what the report itself lays out:
+        certainty language ("proven", "definitively", "confidence can be high")
+        over evidence the report shows is null, corrected, or dose-limited; or
+        a refusal to reach any conclusion after laying out packet evidence that
+        settles the question; or confidence asserted as a label ("my confidence
+        is calibrated") with no grounds named.
+      "1": >
+        Confidence is hedged but ungrounded — "further research is needed",
+        "broadly defensible" — with no packet feature named as the reason, or
+        caveats raised mid-report are dropped from the final conclusion.
+      "2": >
+        The conclusion states how much confidence to place in it and names the
+        specific packet features that set that level — single unreplicated
+        trial, dose mismatch between trials, a corrected pilot, small arm size.
