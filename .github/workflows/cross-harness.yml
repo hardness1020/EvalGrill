@@ -1,0 +1,67 @@
+# Live cross-harness contract tests (issue #31): the same three skill legs
+# (analyze, rubric, validate) on the same fixture, through real harnesses, with
+# the same semantic invariant checkers the offline recordings replay in
+# contract.yml. Dispatch only — a live LLM run is never a PR done-bar (ADR-0002);
+# what is asserted is the contract (schemas, provenance, veto semantics,
+# detections), never that a model wrote particular prose.
+#
+# Each job re-records, so a green run's artifact holds refreshed recordings a
+# maintainer can commit when the harnesses have moved.
+#
+# Secrets: CLAUDE_CODE_OAUTH_TOKEN — Claude Code subscription auth, matching
+# ADR-0001's subscription-first stance; maintainer-bound, so revisit service or
+# OIDC auth if this ever becomes org-wide automation. OPENAI_API_KEY — codex's
+# supported CI path (`codex login --with-api-key`).
+name: cross-harness
+on:
+  workflow_dispatch:
+    inputs:
+      leg:
+        description: which leg to run
+        type: choice
+        default: all
+        options: [all, analyze, rubric, validate]
+jobs:
+  claude-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: |
+          args=""
+          if [ "${{ inputs.leg }}" != "all" ]; then args="--leg ${{ inputs.leg }}"; fi
+          uv run tests/integrations/test_cross_harness.py --live claude-code --record $args
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recordings-claude-code
+          path: tests/integrations/recordings/claude-code
+  codex:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @openai/codex
+      - run: printenv OPENAI_API_KEY | codex login --with-api-key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - run: |
+          args=""
+          if [ "${{ inputs.leg }}" != "all" ]; then args="--leg ${{ inputs.leg }}"; fi
+          uv run tests/integrations/test_cross_harness.py --live codex --record $args
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recordings-codex
+          path: tests/integrations/recordings/codex

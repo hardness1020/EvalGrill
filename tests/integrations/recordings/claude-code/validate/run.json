@@ -1,0 +1,8 @@
+{
+  "harness": "claude-code",
+  "leg": "validate",
+  "cli_version": "2.1.229 (Claude Code)",
+  "recorded_at": "2026-08-12",
+  "duration_s": 73.4,
+  "exit_code": 0
+}

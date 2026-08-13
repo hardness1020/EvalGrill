@@ -1,0 +1,99 @@
+schema_version: 1
+rows:
+- failure_mode: fabricated_citation
+  severity: high
+  tasks:
+  - nr7-blog-check
+  criteria:
+  - cites_only_provided_sources
+  calibration:
+  - nr7-blog-check/phantom-study
+  status: covered
+- failure_mode: misattributed_quote
+  severity: high
+  tasks: []
+  criteria:
+  - quote_attribution
+  calibration:
+  - nr7-marketing-review/quote-swap
+  status: gap
+  gaps:
+  - no_task
+  - criterion_without_task
+- failure_mode: missed_source_conflict
+  severity: high
+  tasks:
+  - nr7-marketing-review
+  - nr7-dose-contradiction
+  - nr7-overall-verdict
+  - nr7-meta-critique
+  criteria:
+  - conflict_handling
+  calibration:
+  - nr7-effect-size/hype-echo
+  - nr7-effect-size/citation-stuffing
+  - nr7-blog-check/phantom-study
+  - nr7-overall-verdict/merged-conflict
+  status: covered
+- failure_mode: false_certainty
+  severity: medium
+  tasks:
+  - nr7-marketing-review
+  - nr7-clinical-advice
+  - nr7-dose-contradiction
+  criteria:
+  - confidence_calibration
+  calibration:
+  - nr7-effect-size/hype-echo
+  - nr7-blog-check/phantom-study
+  - nr7-dose-contradiction/hedged-everything
+  - nr7-overall-verdict/overconfident-verdict
+  - nr7-overall-verdict/fluent-conflict-gloss
+  - nr7-overall-verdict/rubric-parroting
+  status: covered
+- failure_mode: unsupported_claim
+  severity: medium
+  tasks:
+  - nr7-evidence-summary
+  - nr7-source-inventory
+  - nr7-safety-profile
+  - nr7-effect-size
+  - nr7-blog-check
+  criteria:
+  - quantitative_claims_sourced
+  calibration:
+  - nr7-blog-check/phantom-study
+  - nr7-dose-contradiction/both-sides-boilerplate
+  - nr7-overall-verdict/overconfident-verdict
+  status: covered
+- failure_mode: incomplete_coverage
+  severity: medium
+  tasks:
+  - nr7-evidence-summary
+  - nr7-source-inventory
+  - nr7-effect-size
+  - nr7-clinical-advice
+  - nr7-overall-verdict
+  criteria:
+  - evidence_coverage
+  calibration:
+  - nr7-effect-size/hype-echo
+  - nr7-dose-contradiction/both-sides-boilerplate
+  - nr7-overall-verdict/merged-conflict
+  status: covered
+- failure_mode: miscalibrated_confidence
+  severity: medium
+  tasks:
+  - nr7-effect-size
+  - nr7-overall-verdict
+  - nr7-meta-critique
+  criteria:
+  - confidence_calibration
+  calibration:
+  - nr7-effect-size/hype-echo
+  - nr7-blog-check/phantom-study
+  - nr7-dose-contradiction/hedged-everything
+  - nr7-overall-verdict/overconfident-verdict
+  - nr7-overall-verdict/fluent-conflict-gloss
+  - nr7-overall-verdict/rubric-parroting
+  status: covered

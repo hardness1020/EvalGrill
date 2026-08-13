@@ -1,0 +1,46 @@
+schema_version: 1
+
+anonymization:
+  hide_candidate_id: true
+  hide_candidate_provenance: true
+  hide_pairwise_positions: true
+
+evidence_per_call:
+  - task.input.query
+  - task.input.context documents, provided as full text
+  - task.grading_constraints
+  - candidate.output
+  - the single rubric criterion under evaluation, including its anchors
+grading_notes: >
+  task.grading_constraints are visible to the judge and never shown to the
+  candidate agent.
+
+rationale:
+  required: true
+  per_criterion: true
+  instructions: >
+    Judge exactly one criterion per call. The rationale must cite observable
+    evidence from the task packet or candidate output and must not assign
+    scores for other criteria.
+
+repeats:
+  runs_per_case: 2
+  disagreement_policy: >
+    Treat disagreement between runs as a calibration signal requiring review,
+    not as noise to average away.
+
+pairwise:
+  order_swap: true
+  positions_anonymized: true
+  comparison_labels: [Response A, Response B]
+
+aggregation:
+  - any tripped veto -> fail
+  - any essential-importance criterion at level 0 -> fail
+  - otherwise -> pass
+
+escalation:
+  - tripped veto -> human review before the result is used
+  - repeated judge runs disagree on final_result -> human review
+  - pairwise preference changes after order swap -> human review for order sensitivity
+  - deterministic criterion disagrees with its script check -> human review and script audit

@@ -1,0 +1,75 @@
+schema_version: 1
+
+# Evaluation dimensions for Lantern — each groups failure modes from
+# failure-taxonomy.yaml that a judge can assess together from the report text
+# plus the task's attached documents. Descriptions are judge-facing and describe
+# what GOOD looks like. Modes may appear in two dimensions where they genuinely
+# degrade both; the rubric phase should score each mode once and reference it.
+
+dimensions:
+  - id: source_fidelity
+    description: >-
+      Every source named exists in the task's attachment list; every claim,
+      number, and quotation is traceable to a specific attached document and is
+      reported with its attribution intact — right speaker, right study, right
+      dose, right species, right population. Claims stay inside the scope the
+      cited source actually tested. Good looks like: a reader can pick up any
+      sentence, find the document behind it, and confirm the document says that.
+    failure_modes:
+      - fabricated_citation
+      - misattributed_quote
+      - unsourced_quantitative_claim
+      - unsupported_extrapolation
+
+  - id: evidence_synthesis
+    description: >-
+      The report accounts for every attached document — using it, weighing it, or
+      explicitly setting it aside — and puts disagreement on the page. Where
+      attached sources materially conflict, the conflict is stated and, where the
+      packet supports an explanation, explained rather than averaged away.
+      Superseded material is identified as superseded. Good looks like: a reader
+      who has also read the packet finds nothing important missing and nothing
+      quietly reconciled.
+    failure_modes:
+      - missed_source_conflict
+      - unaddressed_attached_source
+      - superseded_evidence_as_current
+
+  - id: evidence_weighting
+    description: >-
+      Stronger evidence visibly outranks weaker evidence. Controlled trials carry
+      the conclusion; pilots, animal studies, post-hoc subgroups, informal
+      tallies, anecdotes, and manufacturer or affiliate copy appear with the
+      qualifier that makes them weak and are not allowed to corroborate a
+      trial-grade claim. Corrected and out-of-window results are downweighted
+      accordingly. Good looks like: the report's ranking of the sources would
+      survive a methodologist reading the same packet.
+    failure_modes:
+      - evidence_strength_flattening
+      - superseded_evidence_as_current
+
+  - id: confidence_calibration
+    description: >-
+      The stated confidence matches what the attached evidence carries — firm
+      where the packet's strong evidence converges, hedged where it is thin,
+      conflicting, corrected, or narrow in scope, and scoped to the conditions
+      actually tested. Miscalibration in either direction counts: proof language
+      over mixed evidence, and refusal to conclude where a well-powered
+      significant result supports a conclusion. Good looks like: a reader acting
+      on the report is neither over- nor under-committed relative to the packet.
+    failure_modes:
+      - false_certainty
+      - over_hedging
+
+  - id: decision_usability
+    description: >-
+      The report is safe and usable as a decision aid: on tasks touching safety,
+      clinical use, or protocols, the documented adverse effects appear with
+      their magnitude and dose-relation, and packet claims of harmlessness are
+      corrected rather than passed through; absent data is described as absent,
+      not as reassurance. The conclusion is locatable and each claim's supporting
+      source is evident. Good looks like: a clinician could act on it without
+      re-reading the packet.
+    failure_modes:
+      - omitted_safety_caveat
+      - report_disorganized

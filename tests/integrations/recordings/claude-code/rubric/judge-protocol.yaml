@@ -1,0 +1,73 @@
+schema_version: 1
+
+# How any judge runs rubric.yaml. Pure protocol — portable to any platform.
+# Which runner executes it (model pin, effort, timeout, replay fixture) lives in
+# evalgrill.yaml's runner: block, never here (ADR-0001).
+
+anonymization:
+  candidate_ids: hidden # judge never sees "phantom-study", "near-tie-a", etc.
+  provenance_labels: hidden # SYNTHETIC / ADVERSARIAL withheld; three of the calibration candidates are reward-hacking plants and must be scored on substance
+  system_or_model_identity: hidden
+  presentation_order: shuffled per call
+
+evidence_per_call:
+  provided:
+    - task.input.query
+    - task.input.context (full text of every packet document, not filenames)
+    - task.grading_constraints
+    - the single criterion under evaluation, with all of its scale anchors
+  withheld:
+    - other criteria and their anchors
+    - task.reference (required_observations / acceptable_outcomes) # human-review key, not judge input
+    - task.failure_targets # naming the planted mode would tell the judge the answer
+    - any other candidate's output
+  notes: >
+    grading_constraints go to the judge only. They are never shown to the agent
+    that produces candidate.output. Packet documents are supplied in full text
+    because every anchor asks whether something appears in the packet, which a
+    filename cannot settle.
+
+rationale:
+  required: true
+  granularity: per_criterion
+  must_cite: >
+    the quoted span of candidate.output, and where relevant the packet document
+    (by name) that the span does or does not match.
+  omnibus_scoring: forbidden # one criterion per call; no single call scoring the whole rubric
+
+repeats:
+  runs_per_case: 2
+  disagreement: >
+    treated as a calibration signal, not noise — any criterion whose two runs
+    disagree is recorded and escalated rather than averaged away.
+
+pairwise:
+  enabled: true
+  order_swap: true # both orders run; near-tie-a / near-tie-b are the order-sensitivity plant
+  positions_anonymized: true
+  order_sensitive_preference: >
+    a preference that flips with order is recorded as no-preference and
+    escalated.
+
+aggregation:
+  final_result: >
+    fail if any veto criterion trips; else fail if any criterion with
+    importance: essential scores 0; else pass.
+  essential_criteria: [quote_attribution, conflict_handling, evidence_coverage, confidence_calibration]
+  veto_criteria: [cites_only_provided_sources]
+  no_compensation: >
+    high scores on other criteria never offset a tripped veto or an essential
+    criterion at 0. Ordinal levels are not summed into a total.
+
+escalation:
+  to_human_review:
+    - any tripped veto
+    - any criterion where the repeat runs disagree
+    - any pairwise preference that flips on order swap
+    - a candidate that passes every criterion but which the judge's rationale
+      calls formulaic, template-like, or rubric-narrating (reward-hacking
+      suspicion)
+    - a judge verdict that disagrees with a calibration label in calibration.jsonl
+  blocking: >
+    escalated cases hold the pack at status DRAFT for the affected criterion
+    until a human resolves them.

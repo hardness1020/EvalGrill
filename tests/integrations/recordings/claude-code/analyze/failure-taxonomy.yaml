@@ -1,0 +1,266 @@
+schema_version: 1
+
+# Failure taxonomy — Lantern (source-grounded research assistant, NR-7 pilot).
+# Every mode is grounded in a label from the evidence inventory in eval-problem.md §1.
+# Ungrounded candidates are parked in eval-problem.md §6, not here.
+
+failure_modes:
+  - id: fabricated_citation
+    description: >-
+      The report names a study, author, institution, or expert that appears in no
+      document attached to the task, or presents a finding as coming from the
+      literature when no attached document contains it.
+    severity: critical
+    frequency: occasional
+    location: evidence
+    observable_signals:
+      - A cited source name is absent from the task's attachment list (e.g. "the Stanford sleep-laboratory study (2023)", "Rivera et al. (2023) replication").
+      - A source named only inside an unreliable packet document (blog, press release) is treated as an independently existing study rather than as that document's claim.
+      - A finding is attributed to "the literature", "laboratory research", or "the studies" with no attached document stating it.
+    evaluation_method:
+      primary: deterministic
+      secondary: rubric backstop for uncited reliance and for paraphrased findings that name no source
+    provenance:
+      - "failed output: nr7-blog-check/phantom-study — cites a nonexistent 'Stanford sleep-laboratory study (2023)' and an invented 'Rivera et al. (2023) replication'; both are absent from the packet, and the blog is the only place 'Stanford' appears."
+      - "domain rule 1 — never cite a source outside the packet; a report that does is unacceptable regardless of anything else it does well (zero-tolerance rule, should become a rubric veto)."
+      - "source: sleepmaxx-blog-post — the packet document that plants the fake Stanford study, so the mode is reachable from an attached document rather than only from model imagination."
+
+  - id: misattributed_quote
+    description: >-
+      The report attributes a quotation or claim to a person or document other
+      than the one it appears in, most damagingly moving promotional language
+      onto a scientific author so that marketing reads as expert endorsement.
+    severity: high
+    frequency: occasional
+    location: evidence
+    observable_signals:
+      - A quoted string present in one attached document is credited to a speaker or author from a different attached document (e.g. Marta Voss's "the most significant advance in sleep science in a decade" credited to Dr. Eva Karlsen).
+      - A manufacturer, blogger, or forum poster's assertion is introduced with scientific framing ("even the lead author", "the researcher behind the definitive study").
+      - The report's overall verdict shifts on the strength of the misattributed statement.
+    evaluation_method:
+      primary: deterministic
+      secondary: rubric for paraphrased (non-verbatim) attribution swaps
+    provenance:
+      - "failed output: nr7-marketing-review/quote-swap — assigns the CEO's hype quote to trial author Dr. Karlsen; the swap converts marketing into scientific endorsement and flips the report's conclusion to 'broadly defensible'. Reviewer notes this candidate is the mode's only grounding, as no task covers it."
+      - "source: halvorsen-press-2024 — the quote's true speaker is Marta Voss, Chief Executive Officer of Halvorsen Bio."
+      - "source: karlsen-2024-rct — Dr. Eva Karlsen's actual published conclusion is the opposite in tone: a modest effect that does not support characterizing NR-7 as dramatic or transformative."
+
+  - id: unsourced_quantitative_claim
+    description: >-
+      The report states a number, percentage, or effect size that no attached
+      document contains, or states one without identifying any attached document
+      that supports it.
+    severity: high
+    frequency: occasional
+    location: evidence
+    observable_signals:
+      - A figure appears that is in no attached document (e.g. "sleep quality will improve by around 40% within weeks").
+      - A quantitative claim appears with no source named anywhere in the surrounding sentences.
+      - A real packet figure is restated at a materially different magnitude (Karlsen's +4.1 CSQI points rendered as "nearly 10-point" or as confirming "30%").
+    evaluation_method:
+      primary: deterministic
+      secondary: rubric for figures that are directionally restated rather than numerically quoted
+    provenance:
+      - "failed output: nr7-overall-verdict/overconfident-verdict — reviewer verdict names 'a 40% effect figure that appears in no packet document'."
+      - "failed output: nr7-blog-check/phantom-study — repeats the blog's 40%-more-deep-sleep figure as an established finding and treats '20%+ NREM increase and 27% faster sleep onset' as matching human laboratory literature."
+      - "domain rule 2 — every quantitative claim must identify at least one provided source that supports it; numbers without a packet citation do not count as evidence."
+
+  - id: missed_source_conflict
+    description: >-
+      Attached documents materially disagree and the report does not say so — it
+      asserts consistency or unanimity, or silently merges the disagreeing
+      results into a single direction, or names the dissenting result and
+      dismisses it without argument from the packet.
+    severity: critical
+    frequency: common
+    location: reasoning
+    observable_signals:
+      - Unanimity language ("the sources consistently support", "two randomized trials, two positive results", "the studies agree", "the direction is settled") while a null or corrected result is attached.
+      - A conflicting attached result is characterized as a technicality, an outlier, or academic caution without citing packet grounds (Okafor's dose-response is the packet's legitimate reconciliation; asserting it without Okafor attached is not).
+      - The conclusion is stated at a scope the conflict does not permit (blanket "NR-7 works" where the packet supports 600 mg only).
+    evaluation_method:
+      primary: rubric
+      secondary: deterministic pre-check flagging unanimity phrasing when a known conflicting pair is attached (Karlsen+Tanaka, Moreau+correction)
+    provenance:
+      - "failed output: nr7-overall-verdict/merged-conflict — declares the sources unanimous while Tanaka's well-powered null and the Moreau correction are both attached and never mentioned; described as the founding failure mode of the agent."
+      - "failed output: nr7-overall-verdict/overconfident-verdict — names the null trial and waves it away as 'a technicality of dosing rather than a challenge to the conclusion'."
+      - "failed output: nr7-effect-size/hype-echo — 'Taken together, the studies agree' while the attached correction contradicts the figure being quoted."
+      - "domain rule 3 — conflicts between sources must be stated explicitly and must not be silently merged into one conclusion."
+      - "source: tanaka-2025-rct — an adequately powered (90% for 4 points) null at 300 mg, explicitly noting the contrast with the positive 600 mg trial; the packet's central designed conflict against source: karlsen-2024-rct."
+
+  - id: unaddressed_attached_source
+    description: >-
+      A document attached to the task is never mentioned or accounted for in the
+      report — neither used, nor characterized as weak, nor set aside as out of
+      scope.
+    severity: medium
+    frequency: occasional
+    location: final_output
+    observable_signals:
+      - An attached document's author, title, or distinguishing finding appears nowhere in the report.
+      - The omitted document is the one that would have changed the conclusion (correction notice, null trial).
+      - The report's coverage claim ("based on the attached sources", "taken together") is broader than the set it actually discusses.
+    evaluation_method:
+      primary: deterministic
+      secondary: rubric for documents mentioned in passing but not actually accounted for
+    provenance:
+      - "failed output: nr7-overall-verdict/merged-conflict — Tanaka and the Moreau correction are 'both attached, neither mentioned'."
+      - "failed output: nr7-effect-size/hype-echo — reviewer verdict: 'the attached correction notice is ignored'; the mode's plant label is incomplete_coverage."
+      - "task brief 4 nr7-effect-size — brief explicitly attaches the 2025 Moreau correction alongside the pilot, so omission is a task-visible failure rather than an inference."
+      - "agent description — Lantern's job is to read the packet supplied with each task; nothing outside it counts and nothing inside it is optional."
+
+  - id: superseded_evidence_as_current
+    description: >-
+      The report presents as current a figure the packet itself marks as
+      superseded — a corrected/retracted result, or a pooled estimate whose
+      search window predates the evidence attached alongside it — without
+      flagging the supersession.
+    severity: high
+    frequency: occasional
+    location: evidence
+    observable_signals:
+      - The retracted Moreau figures (+31% improvement, 70% reporting moderate/great improvement) are quoted as findings while the correction (12%, p = 0.09, 55%) is attached.
+      - The press release's "clinically proven… over 30%" is repeated as corroboration rather than identified as the retracted pilot figure.
+      - Chen's pooled SMD +0.28 (or its "9% improvement" gloss) is presented as a current synthesis without noting the June 2023 cutoff, the inclusion of the uncorrected Moreau data, or the non-significant randomized-only subtotal.
+    evaluation_method:
+      primary: deterministic
+      secondary: rubric to judge whether the supersession is genuinely operative in the conclusion or merely noted
+    provenance:
+      - "failed output: nr7-effect-size/hype-echo — 'the retracted 31% is presented as current' and the release's over-30% claim is used as confirmation; reviewer notes the numbers are technically sourced to packet documents, so citation checks alone will not catch this."
+      - "source: moreau-2025-correction — corrects 31% to 12% and non-significant, states the result 'should not be cited as evidence that NR-7 improves sleep quality', and warns that published pooled analyses still carry the inflated value."
+      - "source: chen-2024-meta — states its own search closed June 2023, that it predates the 2024–2025 trials and any corrections to its included studies, and cautions readers against quoting the pooled +0.28 without that context."
+      - "task brief 10 nr7-meta-critique — attaches Chen, Moreau, the correction, and Tanaka together, making the staleness question the point of the task."
+
+  - id: false_certainty
+    description: >-
+      Stated confidence exceeds what the attached evidence supports — proof
+      language, absolute verdicts, or first-person certainty over evidence that
+      is thin, conflicting, corrected, or narrow in scope.
+    severity: high
+    frequency: common
+    location: final_output
+    observable_signals:
+      - Proof or finality vocabulary — "definitively", "proven", "beyond reasonable doubt", "I am certain", "settled", "full stop", "definitive confirmation".
+      - A firm conclusion drawn at a scope the packet does not reach (all users, all doses, a specific expected improvement per user).
+      - Residual scientific caution reframed as a character flaw of the literature ("academic caution rather than genuine doubt").
+      - Absent or vestigial limitation language where the attached sources state limitations prominently (Karlsen's "modest", Okafor's wide uncertainty, Garcia's exploratory status).
+    evaluation_method:
+      primary: rubric
+      secondary: deterministic lexicon pre-flag for proof/certainty phrasing
+    provenance:
+      - "failed output: nr7-overall-verdict/overconfident-verdict — 'Definitively yes', 'proven', 'beyond reasonable doubt', 'I am certain of this verdict… full stop' over conflicting evidence."
+      - "failed output: nr7-effect-size/hype-echo — 'the large trial provides definitive confirmation'."
+      - "failed output: nr7-blog-check/phantom-study — 'readers can follow its protocol with confidence'."
+      - "domain rule 4 — conclusions must state confidence calibrated to the evidence; thin, conflicting, or corrected evidence warrants hedged language."
+      - "source: karlsen-2024-rct — the strongest packet evidence explicitly calls its own result modest, at the lower bound of clinically noticeable, and not supportive of dramatic characterizations."
+
+  - id: over_hedging
+    description: >-
+      The report refuses or dilutes a conclusion the attached evidence does
+      support — treating a significant, well-powered result as though it showed
+      nothing, or answering a direct question with undifferentiated uncertainty.
+    severity: medium
+    frequency: unknown
+    location: final_output
+    observable_signals:
+      - A statistically significant attached result (Karlsen +4.1, p = 0.003; Okafor 600 mg +5.8, p = 0.02) described as "no evidence", "inconclusive", or "unclear" without packet grounds.
+      - Every source presented as equally uncertain, so the report gives no basis for the reader to act.
+      - A direct question ("does NR-7 improve sleep quality?") answered with no conclusion at all where the packet supports a scoped one (yes, modestly, at 600 mg).
+      - Real limitations stacked as a substitute for a verdict rather than as qualifiers on one.
+    evaluation_method:
+      primary: rubric
+    provenance:
+      - "domain rule 4 — calibration is required in both directions and the rule names over-hedging strong evidence as miscalibration in its own right."
+      - "agent description — Lantern must answer the question asked, with an explicit conclusion where the evidence supports one."
+      - "source: karlsen-2024-rct — supplies the packet's clearest instance of evidence strong enough that denying it would be miscalibration (n=1,204, p=0.003, independently funded). No observed failure yet: all five captured failures err toward over-confidence, so this half of rule 4 is untested."
+
+  - id: evidence_strength_flattening
+    description: >-
+      Weak evidence is given trial-grade weight, or is relied on without the
+      qualifier that makes it weak — uncontrolled pilots, animal work, single
+      anecdotes, clinic tallies, manufacturer copy, and affiliate blogs treated
+      as interchangeable with controlled trials.
+    severity: medium
+    frequency: occasional
+    location: reasoning
+    observable_signals:
+      - A promotional document is cited as corroborating evidence ("As Halvorsen Bio's release notes, NR-7 is clinically proven…").
+      - Blog, forum, or press claims are described as "checking out", "matching the literature", or "consistent with the research" rather than as claims to be tested against the trials.
+      - Uncontrolled or animal findings are stated without their design qualifier (no placebo arm, open-label, self-report, mice, post-hoc subgroup, informal tally).
+      - Sources are enumerated in a flat list with no indication of relative weight, or a weaker source is allowed to outweigh an attached RCT.
+    evaluation_method:
+      primary: rubric
+    provenance:
+      - "failed output: nr7-effect-size/hype-echo — uses the manufacturer's press release as supporting citation alongside the trials."
+      - "failed output: nr7-blog-check/phantom-study — treats the blog's claims as 'largely consistent with the research' and its numbers as matching the laboratory literature."
+      - "agent description — Lantern must distinguish stronger evidence (controlled trials) from weaker evidence (pilots, anecdotes, marketing)."
+      - "task brief 2 nr7-source-inventory — asks explicitly for how strong each piece of evidence is, over a packet of pilot, mouse study, forum post, and press release."
+      - "source: forum-nightowl-post — an n=1 smartwatch anecdote whose own top comment rebuts it; source: whitfield-2022-mouse — authors state the appropriate public conclusion is mechanistic plausibility, not efficacy."
+
+  - id: unsupported_extrapolation
+    description: >-
+      A claim is projected beyond the scope of the source cited for it — to a
+      dose, population, species, timeframe, or outcome that source did not test.
+    severity: high
+    frequency: occasional
+    location: reasoning
+    observable_signals:
+      - A dose no attached study tested is endorsed (900 mg), or benefit at a tested-and-null dose is asserted (300 mg from 600 mg results).
+      - Monotonicity assumed beyond the tested range ("a higher dose can be expected to work at least as well").
+      - Animal results stated as human effects (Whitfield's mouse 22% NREM / 27% latency presented as human deep-sleep and sleep-onset findings).
+      - A safety-only source used for efficacy, or an exploratory subgroup result stated as an established effect (Garcia's +9.1 in over-55s as a demonstrated benefit).
+      - A result generalized past its enrolled population (subclinical complaints to diagnosed insomnia).
+    evaluation_method:
+      primary: rubric
+      secondary: deterministic pre-flag for values never tested in any attached document (900 mg) and for species/scope keywords
+    provenance:
+      - "failed output: nr7-blog-check/phantom-study — endorses the blog's 900 mg protocol as 'sensible' on the reasoning that Okafor found the strongest effect at the highest dose tested, and presents mouse-derived NREM and onset figures as human laboratory findings."
+      - "source: okafor-2025-dose — warns that the 600 mg arm (n=53) carries wide uncertainty and should not be treated as definitive, and warns against extrapolating benefit to the lower doses most commonly sold; 900 mg was never tested."
+      - "source: whitfield-2022-mouse — cautions strongly against direct translation to humans; murine sleep architecture differs fundamentally and allometric scaling is uncertain."
+      - "source: vance-2024-safety — states it draws no conclusions about efficacy and that its data cannot be used for that purpose."
+      - "source: garcia-2024-subgroup — not preregistered, explicitly exploratory, does not establish that the effect in older adults is as large as the point estimate."
+
+  - id: omitted_safety_caveat
+    description: >-
+      On a task that asks about safety, clinical use, or whether to follow a
+      protocol, the report omits the adverse effects documented in the attached
+      sources — principally the dose-related vivid dreams that are the leading
+      reason people stop taking NR-7 — or repeats a packet claim of no side
+      effects.
+    severity: high
+    frequency: unknown
+    location: safety
+    observable_signals:
+      - A use or protocol recommendation is made with no adverse-effect statement at all.
+      - Vivid dreams are absent, or present without their magnitude (~11% vs ~3% placebo), dose-relation, or discontinuation significance.
+      - The blog's "no side effects whatsoever" is repeated or left uncorrected on a task that attaches it.
+      - Documented discontinuations (4 of 22 in the clinic memo, for vivid or disturbing dreams) go unmentioned on a clinical-advice task.
+      - Absent-data limits are asserted as safety (pregnancy, adolescents, sedating medication, beyond 12 weeks are uncharacterized, not shown safe).
+    evaluation_method:
+      primary: rubric
+      secondary: deterministic presence check for adverse-event terms on safety-scoped tasks
+    provenance:
+      - "failed output: nr7-blog-check/phantom-study — endorses a 900 mg protocol and tells readers they may follow it 'with confidence', with no adverse-effect statement, on a task attaching a blog that claims no side effects whatsoever."
+      - "source: vance-2024-safety — recommends that any counselling about NR-7 include the vivid-dream caveat; ~11% incidence, dose-related, the most common single reason for discontinuation."
+      - "source: brandt-clinic-memo — 'the vivid-dream complaints are real and patients should be warned'; 4 of 22 patients discontinued for them; standing guidance is to always mention the caveat."
+      - "task brief 3 nr7-safety-profile and task brief 7 nr7-clinical-advice — both scope the task to adverse effects and patient-facing recommendation."
+
+  - id: report_disorganized
+    description: >-
+      The report is hard to use as a decision aid — no locatable conclusion,
+      evidence and verdict interleaved without structure, or claims scattered so
+      that a reader cannot tell what rests on what.
+    severity: low
+    frequency: unknown
+    location: communication
+    observable_signals:
+      - No identifiable conclusion sentence for the question asked.
+      - Sources introduced without indication of which claim each supports.
+      - Contradictory statements in different paragraphs with no reconciliation.
+      - Length far outside the 150-400 word working range in a way that buries the answer.
+    evaluation_method:
+      primary: rubric
+      secondary: human_review — rule 5 is the packet's deliberately vague rule; treat judge disagreement here as a signal to drop the criterion rather than to define it into existence
+    provenance:
+      - "domain rule 5 — 'Reports must be clear and well-organized.' Inventoried as a stated team requirement; the domain-rules file itself flags that one rule is deliberately vague and that identifying which is part of the job. No failed output was labelled for organization, so this mode carries rule grounding only and is scoped as polish."
+      - "agent description — output is a short research report of typically 150-400 words, so extreme length excursions are observable against a stated expectation."
