@@ -1,6 +1,10 @@
 {
   "name": "evalgrill",
   "version": "0.1.0",
-  "author": { "name": "hardness1020" },
-  "description": "Design trustworthy evaluations for AI tasks: analyze the problem, build a dataset, design a rubric, validate the eval design, and export to Braintrust, LangSmith, or Phoenix."
+  "author": { "name": "hardness1020", "url": "https://github.com/hardness1020" },
+  "description": "Design trustworthy evaluations for AI tasks: analyze the problem, build a dataset, design a rubric, validate the eval design, and export to Braintrust, LangSmith, or Phoenix.",
+  "homepage": "https://github.com/hardness1020/EvalGrill",
+  "repository": "https://github.com/hardness1020/EvalGrill",
+  "license": "Apache-2.0",
+  "keywords": ["evals", "evaluation", "llm-as-judge", "ai-agents", "braintrust", "langsmith", "phoenix"]
 }
