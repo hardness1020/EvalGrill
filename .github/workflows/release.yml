@@ -1,0 +1,20 @@
+# Release discipline (map ticket #30): the tag is the release, so the tag is
+# where drift is caught. Fails a `v*` tag whose version disagrees with
+# .claude-plugin/plugin.json, or that has no CHANGELOG.md section. Recover by
+# deleting the tag, fixing the mismatch, re-tagging.
+name: release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  version-drift:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          tag=${GITHUB_REF_NAME#v}
+          manifest=$(jq -r .version .claude-plugin/plugin.json)
+          [ "$tag" = "$manifest" ] || { echo "::error::tag $GITHUB_REF_NAME disagrees with plugin.json version $manifest"; exit 1; }
+          grep -qE "^## ${manifest//./\.}( |\$)" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## $manifest' section"; exit 1; }

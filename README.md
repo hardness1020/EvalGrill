@@ -114,7 +114,7 @@ uv run scripts/audit_pack.py demo/golden-pack --runner replay      # all seven d
 uv run tests/acceptance_30.py                                      # the full §30 done-bar
 ```
 
-CI: [`contract.yml`](.github/workflows/contract.yml) (offline, every PR), [`acceptance.yml`](.github/workflows/acceptance.yml) (offline §30 run), [`live-smoke.yml`](.github/workflows/live-smoke.yml) (live platform golden paths, dispatch/release).
+CI: [`contract.yml`](.github/workflows/contract.yml) (offline, every PR), [`acceptance.yml`](.github/workflows/acceptance.yml) (offline §30 run), [`live-smoke.yml`](.github/workflows/live-smoke.yml) (live platform golden paths, dispatch/release), [`release.yml`](.github/workflows/release.yml) (tag/version/[CHANGELOG](CHANGELOG.md) drift, on `v*` tags).
 
 Contributions welcome: [CONTRIBUTING.md](CONTRIBUTING.md) has the full offline checklist.
 
