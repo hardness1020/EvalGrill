@@ -5,11 +5,11 @@
 <p align="center">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License"></a>
 <a href="#quickstart"><img src="https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg" alt="Claude Code plugin"></a>
+<a href="integrations/codex/README.md"><img src="https://img.shields.io/badge/Codex-skills-10a37f.svg" alt="Codex skills"></a>
 </p>
 
 Most eval tooling assumes you already have a good eval. EvalGrill is the layer before that: it turns evidence of real agent failures into a portable, validated **EvalPack** (failure taxonomy, dataset, rubric, calibration, coverage), the test cases that decide which agent is actually better. Platforms like Braintrust, LangSmith, and Phoenix then execute it.
 
-[Quickstart](#quickstart) · [The four phases](#the-four-phases) · [What validation catches](#what-validation-catches) · [Exporters](#exporters) · [Demo Corpus](#demo-corpus) · [Repository structure](#repository-structure) · [Development](#development)
 
 ## Why
 
@@ -43,8 +43,6 @@ Then inside the session:
 /evalgrill                # report EvalPack status, route to the right phase
 /evalgrill analyze        # or jump to a phase directly
 ```
-
-For the dev loop (`/reload-plugins`, validation, sandbox notes), see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## The four phases
 
